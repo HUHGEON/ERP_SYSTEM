@@ -13,6 +13,7 @@ public class EmployeeDetailPanel extends JPanel {
 
     private final HrRecordDAO hrRecordDAO = new HrRecordDAO();
     private final DeveloperDAO developerDAO = new DeveloperDAO();
+    private final ManagementDAO managementDAO = new ManagementDAO();
     private final CareerDAO careerDAO = new CareerDAO();
     private final LeaveDAO leaveDAO = new LeaveDAO();
     private final ProjectParticipationDAO projectDAO = new ProjectParticipationDAO();
@@ -26,6 +27,9 @@ public class EmployeeDetailPanel extends JPanel {
     private final JLabel promotionLabel = new JLabel();
     private final JLabel techLabel = new JLabel();
     private final JPanel techRow;
+
+    private final JLabel permissionLabel = new JLabel();
+    private final JPanel permissionRow;
 
     // 탭별 테이블 모델
     private final DefaultTableModel careerModel = new DefaultTableModel(
@@ -89,6 +93,20 @@ public class EmployeeDetailPanel extends JPanel {
         gc.gridwidth = 10;
         gc.fill = GridBagConstraints.HORIZONTAL;
         headerPanel.add(techRow, gc);
+
+        // 세 번째 줄: 권한단계 (경영관리만 표시)
+        permissionRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 4, 0));
+        permissionRow.setBackground(new Color(245, 248, 255));
+        JLabel permKey = new JLabel("권한단계:");
+        permKey.setForeground(new Color(128, 0, 128));
+        permKey.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 12));
+        permissionLabel.setForeground(new Color(128, 0, 128));
+        permissionLabel.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 12));
+        permissionRow.add(permKey);
+        permissionRow.add(permissionLabel);
+
+        gc.gridy = 2;
+        headerPanel.add(permissionRow, gc);
         gc.gridwidth = 1;
         gc.fill = GridBagConstraints.NONE;
 
@@ -147,6 +165,18 @@ public class EmployeeDetailPanel extends JPanel {
                 techLabel.setText(dev != null && dev.getTech() != null ? dev.getTech() : "(등록된 기술스택 없음)");
             } catch (Exception e) {
                 techLabel.setText("-");
+            }
+        }
+
+        // 권한단계 (경영관리만)
+        boolean isMgmt = "경영관리".equals(emp.getDepartment());
+        permissionRow.setVisible(isMgmt);
+        if (isMgmt) {
+            try {
+                Management mgmt = managementDAO.getById(emp.getId());
+                permissionLabel.setText(mgmt != null && mgmt.getPermissionLevel() != null ? mgmt.getPermissionLevel() : "(등록된 권한 없음)");
+            } catch (Exception e) {
+                permissionLabel.setText("-");
             }
         }
 
