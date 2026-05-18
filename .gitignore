@@ -1,0 +1,18 @@
+# macOS
+.DS_Store
+**/.DS_Store
+
+# Compiled output
+out/
+*.class
+*.jar
+
+# IntelliJ IDEA
+.idea/
+*.iml
+
+# Build
+target/
+
+# Claude Code
+.claude/

@@ -1,0 +1,258 @@
+body {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    margin: 0;
+    gap: 20px;
+}
+
+h1 {
+    font-size: 36px;
+    font-weight: bold;
+    color: #524747;
+    text-align: center;
+    letter-spacing: 2px;
+}
+
+form {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.body__button--home {
+    position: fixed;
+    top: 10px;
+    left: 10px;
+    font-size: 30px;
+    color: black;
+}
+
+.body__button--back {
+    position: fixed;
+    top: 10px;
+    left: 10px;
+    font-size: 30px;
+    color: black;
+}
+
+.body__div--index {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+
+    padding: 100px;
+
+    border: 0.5px solid #ccc;
+    border-radius: 5px;
+    background-color: transparent;
+}
+
+.body__div--employee {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+
+    padding: 50px;
+
+    border: 0.5px solid #ccc;
+    border-radius: 5px;
+    background-color: transparent;
+}
+
+.body__div--project {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+
+    padding: 50px;
+
+    border: 0.5px solid #ccc;
+    border-radius: 5px;
+    background-color: transparent;
+}
+
+.body__div--study {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+
+    padding: 50px;
+
+    border: 0.5px solid #ccc;
+    border-radius: 5px;
+    background-color: transparent;
+}
+
+.body__div--employee_details {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+
+    width: 400px;
+    padding: 50px;
+
+    border: 0.5px solid #ccc;
+    border-radius: 5px;
+    background-color: transparent;
+}
+
+.body__div--project_details {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+
+    width: 600px;
+    padding: 30px;
+
+    border: 0.5px solid #ccc;
+    border-radius: 5px;
+    background-color: transparent;
+}
+
+.body__div--output_details {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 50px;
+
+    padding: 50px;
+
+    border: 0.5px solid #ccc;
+    border-radius: 5px;
+    background-color: transparent;
+}
+
+.body__button {
+    width: 200px;
+    height: 50px;
+    border: 1px solid #ccc;
+    background-color: transparent;
+}
+
+.body__button:hover {
+    background-color: #f0f0f0;
+    border-color: #888;
+}
+
+.form__input {
+    width: 300px;
+    padding: 10px;
+    font-size: 16px;
+
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    background-color: transparent;
+}
+
+.form__select {
+    width: 300px;
+    padding: 10px;
+    font-size: 16px;
+
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    background-color: transparent;
+}
+
+.form__select:hover {
+    border-color: #888;
+    background-color: #f1f1f1;
+}
+
+.form__button {
+    width: 300px;
+    padding: 10px;
+    font-size: 16px;
+
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    background-color: transparent;
+}
+
+.form__button:hover {
+    background-color: #f0f0f0;
+    border-color: #888;
+}
+
+table {
+    width: 80%;
+    margin-top: 20px;
+    text-align: center;
+    border-collapse: collapse;
+    border: 1px solid #ccc;
+}
+
+.div--employee_row {
+    width: 200px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: transparent;
+}
+
+.div--employee_details {
+    width: 100px;
+    font-weight: bold;
+    font-size: larger;
+    color: #333;
+}
+
+.div--employee_value {
+    width: 100px;
+    font-weight: bold;
+    font-size: larger;
+    color: #666;
+}
+
+.div--project_row {
+    width: 600px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: transparent;
+}
+
+.div--project_details {
+    width: 260px;
+    font-weight: bold;
+    font-size: larger;
+    color: #333;
+}
+
+.div--project_value {
+    width: 340px;
+    font-weight: bold;
+    font-size: larger;
+    color: #666;
+}
+
+.form__input--date {
+    width: 300px;
+    padding: 10px;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+
+    font-weight: bold;
+    font-size: 16px;
+    color: #333;
+}
+
+.form__input--date:hover {
+    border-color: #888;
+    background-color: #f1f1f1;
+}
