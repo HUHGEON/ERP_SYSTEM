@@ -34,6 +34,23 @@ public class StudyDAO {
         return list;
     }
 
+    public List<Study> getByEmployeeId(int employeeId) throws SQLException {
+        String sql = "SELECT DISTINCT s.id, s.study_name, s.category " +
+                     "FROM study s JOIN study_participation sp ON s.id = sp.study_id " +
+                     "WHERE sp.employee_id = ? ORDER BY s.study_name";
+        List<Study> list = new ArrayList<>();
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, employeeId);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    list.add(new Study(rs.getInt("id"), rs.getString("study_name"), rs.getString("category")));
+                }
+            }
+        }
+        return list;
+    }
+
     public int nextId() throws SQLException {
         try (Connection conn = DatabaseConnection.getConnection();
              Statement st = conn.createStatement();

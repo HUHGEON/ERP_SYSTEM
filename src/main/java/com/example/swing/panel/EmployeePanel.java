@@ -3,6 +3,7 @@ package com.example.swing.panel;
 import com.example.dao.EmployeeDAO;
 import com.example.model.Employee;
 import com.example.swing.dialog.EmployeeDialog;
+import com.example.util.UserSession;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
@@ -17,6 +18,9 @@ public class EmployeePanel extends JPanel {
     private static final String[] DEPARTMENTS = {"", "개발자", "마케팅", "경영관리", "연구개발"};
     private static final String[] COLUMNS = {"ID", "이름", "직급", "부서", "주민번호", "학력"};
 
+    private final boolean isAdmin = UserSession.getInstance().isAdmin();
+    private final int myId = UserSession.getInstance().getEmployeeId();
+
     private final EmployeeDAO dao = new EmployeeDAO();
     private final DefaultTableModel tableModel = new DefaultTableModel(COLUMNS, 0) {
         @Override public boolean isCellEditable(int r, int c) { return false; }
@@ -30,6 +34,7 @@ public class EmployeePanel extends JPanel {
     private final JSplitPane splitPane;
 
     private List<Employee> currentList;
+    private boolean detailShowing = false;
 
     public EmployeePanel() {
         setLayout(new BorderLayout());
@@ -73,11 +78,18 @@ public class EmployeePanel extends JPanel {
 
         // 분할 패인
         splitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT, topPanel, bottomWrapper);
-        splitPane.setResizeWeight(0.55);
+        splitPane.setResizeWeight(1.0);
         splitPane.setDividerSize(6);
         splitPane.setOneTouchExpandable(true);
 
         add(splitPane, BorderLayout.CENTER);
+
+        if (!isAdmin) {
+            searchPanel.setVisible(false);
+            addBtn.setVisible(false);
+            editBtn.setVisible(false);
+            deleteBtn.setVisible(false);
+        }
 
         // 이벤트
         searchBtn.addActionListener(e -> loadData());
@@ -95,35 +107,49 @@ public class EmployeePanel extends JPanel {
         });
         deleteBtn.addActionListener(e -> deleteSelected());
 
-        // 더블클릭 → 하단 상세 패널 로드
-        table.addMouseListener(new MouseAdapter() {
-            @Override
-            public void mouseClicked(MouseEvent e) {
-                if (e.getClickCount() == 2) {
-                    int row = table.getSelectedRow();
-                    if (row >= 0) {
-                        detailPanel.loadEmployee(currentList.get(row));
-                        // 하단이 너무 작으면 적당한 위치로 이동
-                        if (splitPane.getDividerLocation() > splitPane.getHeight() - 180) {
-                            splitPane.setDividerLocation(0.55);
-                        }
-                    }
+        // 행 선택 → 하단 상세 패널 표시/숨김
+        table.getSelectionModel().addListSelectionListener(e -> {
+            if (!e.getValueIsAdjusting()) {
+                int row = table.getSelectedRow();
+                if (row >= 0) {
+                    detailPanel.loadEmployee(currentList.get(row));
+                    detailShowing = true;
+                    splitPane.setDividerLocation(0.55);
+                } else {
+                    detailShowing = false;
+                    SwingUtilities.invokeLater(() ->
+                        splitPane.setDividerLocation(splitPane.getMaximumDividerLocation()));
+                }
+            }
+        });
+
+        // 화면에 처음 표시될 때 하단 숨김 (레이아웃 완료 후 실행)
+        splitPane.addHierarchyListener(e -> {
+            if ((e.getChangeFlags() & java.awt.event.HierarchyEvent.SHOWING_CHANGED) != 0
+                    && splitPane.isShowing() && !detailShowing) {
+                SwingUtilities.invokeLater(() ->
+                    splitPane.setDividerLocation(splitPane.getMaximumDividerLocation()));
+            }
+        });
+
+        // 전체화면/리사이즈 시 상태 유지
+        splitPane.addComponentListener(new java.awt.event.ComponentAdapter() {
+            @Override public void componentResized(java.awt.event.ComponentEvent e) {
+                if (!detailShowing) {
+                    SwingUtilities.invokeLater(() ->
+                        splitPane.setDividerLocation(splitPane.getMaximumDividerLocation()));
                 }
             }
         });
 
         loadData();
-        // 초기 divider 위치: 전체 높이의 55% (나중에 패널이 렌더링된 후 적용)
-        SwingUtilities.invokeLater(() -> splitPane.setDividerLocation(0.55));
     }
 
     private void loadData() {
         try {
-            currentList = dao.search(
-                nameField.getText().trim(),
-                (String) gradeBox.getSelectedItem(),
-                (String) deptBox.getSelectedItem()
-            );
+            currentList = isAdmin
+                ? dao.search(nameField.getText().trim(), (String) gradeBox.getSelectedItem(), (String) deptBox.getSelectedItem())
+                : dao.getByEmployeeId(myId);
             tableModel.setRowCount(0);
             for (Employee e : currentList) {
                 tableModel.addRow(new Object[]{

@@ -62,6 +62,27 @@ public class ProjectDAO {
         return search(null, null);
     }
 
+    public List<Project> getCompletedByEmployeeId(int employeeId) throws SQLException {
+        String sql = "SELECT DISTINCT p.id, p.customer_id, c.customer_name, p.project_name, p.start_date, p.end_date " +
+                     "FROM project p " +
+                     "JOIN customer c ON p.customer_id = c.id " +
+                     "JOIN project_participation pp ON p.id = pp.project_id " +
+                     "JOIN developer d ON pp.developer_id = d.id " +
+                     "WHERE d.id = ? AND p.end_date IS NOT NULL";
+        List<Project> list = new ArrayList<>();
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, employeeId);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    list.add(new Project(rs.getInt("id"), rs.getInt("customer_id"), rs.getString("customer_name"),
+                        rs.getString("project_name"), rs.getString("start_date"), rs.getString("end_date")));
+                }
+            }
+        }
+        return list;
+    }
+
     public int nextId() throws SQLException {
         try (Connection conn = DatabaseConnection.getConnection();
              Statement st = conn.createStatement();

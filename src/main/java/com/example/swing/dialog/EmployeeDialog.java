@@ -6,6 +6,7 @@ import com.example.dao.HrRecordDAO;
 import com.example.model.Developer;
 import com.example.model.Employee;
 import com.example.model.HrRecord;
+import com.example.util.MaskingUtil;
 
 import javax.swing.*;
 import java.awt.*;
@@ -51,7 +52,7 @@ public class EmployeeDialog extends JDialog {
         addRow(form, lc, fc, 1, "이름:", nameField);
         addRow(form, lc, fc, 2, "직급:", gradeBox);
         addRow(form, lc, fc, 3, "부서:", deptBox);
-        addRow(form, lc, fc, 4, "주민번호 (XXXXXX-XXXXXXX):", residentField);
+        addRow(form, lc, fc, 4, "주민번호:", residentField);
         addRow(form, lc, fc, 5, "학력:", educationField);
         lc.gridy = 6;
         fc.gridy = 6;
@@ -59,6 +60,9 @@ public class EmployeeDialog extends JDialog {
         form.add(techField, fc);
 
         idField.setEditable(false);
+        if (!isEdit) {
+            MaskingUtil.installResidentFilter(residentField);
+        }
         if (isEdit) {
             idField.setText(String.valueOf(emp.getId()));
             nameField.setText(emp.getEmployeeName());

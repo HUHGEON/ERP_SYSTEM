@@ -3,6 +3,7 @@ package com.example.swing.panel;
 import com.example.dao.CareerDAO;
 import com.example.model.Career;
 import com.example.swing.dialog.CareerDialog;
+import com.example.util.UserSession;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
@@ -12,6 +13,9 @@ import java.util.List;
 public class CareerPanel extends JPanel {
 
     private static final String[] COLUMNS = {"ID", "직원명", "회사명", "입사일", "퇴사일"};
+
+    private final boolean isAdmin = UserSession.getInstance().isAdmin();
+    private final int myId = UserSession.getInstance().getEmployeeId();
 
     private final CareerDAO dao = new CareerDAO();
     private final DefaultTableModel tableModel = new DefaultTableModel(COLUMNS, 0) {
@@ -44,6 +48,13 @@ public class CareerPanel extends JPanel {
         add(new JScrollPane(table), BorderLayout.CENTER);
         add(btnPanel, BorderLayout.SOUTH);
 
+        if (!isAdmin) {
+            searchPanel.setVisible(false);
+            addBtn.setVisible(false);
+            editBtn.setVisible(false);
+            deleteBtn.setVisible(false);
+        }
+
         searchBtn.addActionListener(e -> loadData());
         resetBtn.addActionListener(e -> { nameField.setText(""); loadData(); });
         addBtn.addActionListener(e -> openDialog(null));
@@ -58,9 +69,12 @@ public class CareerPanel extends JPanel {
 
     private void loadData() {
         try {
-            currentList = dao.search(nameField.getText().trim());
+            currentList = isAdmin
+                ? dao.search(nameField.getText().trim())
+                : dao.getByEmployeeId(myId);
             tableModel.setRowCount(0);
-            for (Career c : currentList) tableModel.addRow(new Object[]{c.getId(), c.getEmployeeName(), c.getCompanyName(), c.getStartTime(), c.getEndTime()});
+            for (Career c : currentList)
+                tableModel.addRow(new Object[]{c.getId(), c.getEmployeeName(), c.getCompanyName(), c.getStartTime(), c.getEndTime()});
         } catch (Exception ex) { JOptionPane.showMessageDialog(this, "오류: " + ex.getMessage(), "DB 오류", JOptionPane.ERROR_MESSAGE); }
     }
 

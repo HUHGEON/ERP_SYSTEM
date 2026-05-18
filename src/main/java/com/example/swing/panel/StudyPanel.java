@@ -6,6 +6,7 @@ import com.example.model.Study;
 import com.example.model.StudyParticipation;
 import com.example.swing.dialog.StudyDialog;
 import com.example.swing.dialog.StudyParticipationDialog;
+import com.example.util.UserSession;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
@@ -16,6 +17,9 @@ public class StudyPanel extends JPanel {
 
     private static final String[] STUDY_COLS   = {"ID", "스터디명", "카테고리"};
     private static final String[] MEMBER_COLS  = {"참여ID", "직원ID", "직원명"};
+
+    private final boolean isAdmin = UserSession.getInstance().isAdmin();
+    private final int myId = UserSession.getInstance().getEmployeeId();
 
     private final StudyDAO              studyDAO  = new StudyDAO();
     private final StudyParticipationDAO spDAO     = new StudyParticipationDAO();
@@ -42,7 +46,6 @@ public class StudyPanel extends JPanel {
         setLayout(new BorderLayout(5, 5));
         setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
-        // ── 상단: 스터디 목록 ──
         JPanel searchPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
         searchPanel.add(new JLabel("스터디명:"));
         searchPanel.add(nameField);
@@ -70,7 +73,6 @@ public class StudyPanel extends JPanel {
         topPanel.add(new JScrollPane(studyTable), BorderLayout.CENTER);
         topPanel.add(studyBtnPanel, BorderLayout.SOUTH);
 
-        // ── 하단: 참여 직원 ──
         memberTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         memberTable.getTableHeader().setReorderingAllowed(false);
         memberTable.setRowHeight(24);
@@ -94,7 +96,14 @@ public class StudyPanel extends JPanel {
         split.setDividerSize(6);
         add(split, BorderLayout.CENTER);
 
-        // ── 이벤트 ──
+        if (!isAdmin) {
+            searchPanel.setVisible(false);
+            addStudyBtn.setVisible(false);
+            editStudyBtn.setVisible(false);
+            deleteStudyBtn.setVisible(false);
+            deleteMemberBtn.setVisible(false);
+        }
+
         searchBtn.addActionListener(e -> loadStudies());
         resetBtn.addActionListener(e -> { nameField.setText(""); categoryField.setText(""); loadStudies(); });
 
@@ -133,7 +142,9 @@ public class StudyPanel extends JPanel {
 
     private void loadStudies() {
         try {
-            studyList = studyDAO.search(nameField.getText().trim(), categoryField.getText().trim());
+            studyList = isAdmin
+                ? studyDAO.search(nameField.getText().trim(), categoryField.getText().trim())
+                : studyDAO.getByEmployeeId(myId);
             studyModel.setRowCount(0);
             for (Study s : studyList)
                 studyModel.addRow(new Object[]{s.getId(), s.getStudyName(), s.getCategory()});
