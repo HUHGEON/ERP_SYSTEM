@@ -3,6 +3,7 @@
 MYSQL_JAR="/Users/heogeon/Downloads/apache-tomcat-10.1.24/lib/mysql-connector-j-9.1.0.jar"
 
 SRC_DIR="src/main/java"
+RESOURCES_DIR="src/main/resources"
 OUT_DIR="out"
 
 mkdir -p "$OUT_DIR"
@@ -16,4 +17,4 @@ if [ $? -ne 0 ]; then
 fi
 
 echo "실행 중..."
-java -cp "$OUT_DIR:$MYSQL_JAR" com.example.swing.Main
+java -cp "$OUT_DIR:$RESOURCES_DIR:$MYSQL_JAR" com.example.swing.Main

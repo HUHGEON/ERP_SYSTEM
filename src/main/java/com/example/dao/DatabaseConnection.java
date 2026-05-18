@@ -1,29 +1,46 @@
 package com.example.dao;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
+import java.util.Properties;
 
 public class DatabaseConnection {
-    // MySQL 데이터베이스 연결 정보
-    private static final String URL = "jdbc:mysql://localhost:3306/cmm";
-    private static final String USERNAME = "ureca";
-    private static final String PASSWORD = "ureca";
 
-    // 데이터베이스 연결을 반환하는 메서드
+    private static final Properties props = new Properties();
+
+    static {
+        try (InputStream in = DatabaseConnection.class
+                .getClassLoader()
+                .getResourceAsStream("application.properties")) {
+            if (in == null) {
+                throw new RuntimeException("application.properties 파일을 찾을 수 없습니다.");
+            }
+            props.load(in);
+        } catch (IOException e) {
+            throw new RuntimeException("application.properties 로드 실패", e);
+        }
+    }
+
     public static Connection getConnection() throws SQLException {
         try {
-            // JDBC 드라이버 로드
             Class.forName("com.mysql.cj.jdbc.Driver");
-            // 데이터베이스 연결 반환
-            return DriverManager.getConnection(URL, USERNAME, PASSWORD);
+            return DriverManager.getConnection(
+                    props.getProperty("db.url"),
+                    props.getProperty("db.username"),
+                    props.getProperty("db.password")
+            );
         } catch (ClassNotFoundException e) {
-            // JDBC 드라이버가 없는 경우
             throw new SQLException("JDBC Driver not found", e);
         } catch (SQLException e) {
-            // 데이터베이스 연결 실패 시 오류 메시지 출력
             System.err.println("Database connection failed: " + e.getMessage());
             throw e;
         }
+    }
+
+    public static String getErpPassword() {
+        return props.getProperty("erp.password");
     }
 }

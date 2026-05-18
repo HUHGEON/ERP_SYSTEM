@@ -1,0 +1,7 @@
+# DB 연결 정보
+db.url=jdbc:mysql://localhost:3306/cmm
+db.username=YOUR_DB_USERNAME
+db.password=YOUR_DB_PASSWORD
+
+# ERP 시스템 접속 비밀번호
+erp.password=YOUR_ERP_PASSWORD
