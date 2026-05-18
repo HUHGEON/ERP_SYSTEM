@@ -9,6 +9,20 @@ import java.util.List;
 
 public class ManagementDAO {
 
+    public Management getById(int id) throws SQLException {
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(
+                 "SELECT m.id, e.employee_name, m.permission_level FROM management m JOIN employee e ON m.id = e.id WHERE m.id = ?")) {
+            ps.setInt(1, id);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return new Management(rs.getInt("id"), rs.getString("employee_name"), rs.getString("permission_level"));
+                }
+            }
+        }
+        return null;
+    }
+
     public List<Management> search(String name) throws SQLException {
         StringBuilder sql = new StringBuilder(
             "SELECT m.id, e.employee_name, m.permission_level FROM management m JOIN employee e ON m.id = e.id WHERE 1=1"
