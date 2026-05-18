@@ -66,6 +66,53 @@ public class ProjectParticipationDAO {
         return list;
     }
 
+    public List<ProjectParticipation> getByProjectId(int projectId) throws SQLException {
+        String sql = "SELECT pp.id, pp.project_id, p.project_name, pp.developer_id, e.employee_name, " +
+                     "pp.project_role, pp.start_date, pp.end_date " +
+                     "FROM project_participation pp " +
+                     "JOIN project p ON pp.project_id = p.id " +
+                     "JOIN developer d ON pp.developer_id = d.id " +
+                     "JOIN employee e ON d.id = e.id WHERE pp.project_id = ? ORDER BY e.employee_name";
+        List<ProjectParticipation> list = new ArrayList<>();
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, projectId);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    list.add(new ProjectParticipation(
+                        rs.getInt("id"), rs.getInt("project_id"), rs.getString("project_name"),
+                        rs.getInt("developer_id"), rs.getString("employee_name"),
+                        rs.getString("project_role"), rs.getString("start_date"), rs.getString("end_date")));
+                }
+            }
+        }
+        return list;
+    }
+
+    public ProjectParticipation getByProjectAndEmployee(int projectId, int employeeId) throws SQLException {
+        String sql = "SELECT pp.id, pp.project_id, p.project_name, pp.developer_id, e.employee_name, " +
+                     "pp.project_role, pp.start_date, pp.end_date " +
+                     "FROM project_participation pp " +
+                     "JOIN project p ON pp.project_id = p.id " +
+                     "JOIN developer d ON pp.developer_id = d.id " +
+                     "JOIN employee e ON d.id = e.id " +
+                     "WHERE pp.project_id = ? AND pp.developer_id = ? LIMIT 1";
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, projectId);
+            ps.setInt(2, employeeId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return new ProjectParticipation(
+                        rs.getInt("id"), rs.getInt("project_id"), rs.getString("project_name"),
+                        rs.getInt("developer_id"), rs.getString("employee_name"),
+                        rs.getString("project_role"), rs.getString("start_date"), rs.getString("end_date"));
+                }
+            }
+        }
+        return null;
+    }
+
     public List<ProjectParticipation> getAllParticipations() throws SQLException {
         List<ProjectParticipation> list = new ArrayList<>();
         try (Connection conn = DatabaseConnection.getConnection();

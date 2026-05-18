@@ -53,19 +53,19 @@ public class EvaluationItemDAO {
     // 고객 평가 항목 (프로젝트 기준)
     public List<EvaluationItem> getByProjectCustomer(int projectId) throws SQLException {
         String sql =
-            "SELECT ei.id, ei.evaluation_id, ei.rate, ei.content " +
+            "SELECT ei.id, ei.evaluation_id, ei.rate, ei.content, ev.participation_id " +
             "FROM evaluation_item ei " +
             "JOIN evaluation ev ON ei.evaluation_id = ev.id " +
             "JOIN customer_evaluation ce ON ce.id = ev.id " +
             "JOIN project_participation pp ON ev.participation_id = pp.id " +
             "WHERE pp.project_id = ? ORDER BY ev.id, ei.id";
-        return fetchItems(sql, projectId);
+        return fetchItemsWithParticipation(sql, projectId);
     }
 
     // PM 평가 항목 + PM 이름 (프로젝트 기준)
     public List<EvaluationItem> getByProjectPmWithName(int projectId) throws SQLException {
         String sql =
-            "SELECT ei.id, ei.evaluation_id, ei.rate, ei.content, e2.employee_name AS pm_name " +
+            "SELECT ei.id, ei.evaluation_id, ei.rate, ei.content, e2.employee_name AS pm_name, ev.participation_id " +
             "FROM evaluation_item ei " +
             "JOIN evaluation ev ON ei.evaluation_id = ev.id " +
             "JOIN pm_evaluation pe ON pe.id = ev.id " +
@@ -84,6 +84,7 @@ public class EvaluationItemDAO {
                         rs.getDouble("rate"), rs.getString("content")
                     );
                     item.setEvaluatorName(rs.getString("pm_name"));
+                    item.setParticipationId(rs.getInt("participation_id"));
                     list.add(item);
                 }
             }
@@ -123,7 +124,7 @@ public class EvaluationItemDAO {
     // 특정 동료의 평가 항목 (프로젝트 + 동료 ID 기준, 카테고리 포함)
     public List<EvaluationItem> getByProjectAndPartner(int projectId, int partnerId) throws SQLException {
         String sql =
-            "SELECT ei.id, ei.evaluation_id, ei.rate, ei.content, ev.participation_category " +
+            "SELECT ei.id, ei.evaluation_id, ei.rate, ei.content, ev.participation_category, ev.participation_id " +
             "FROM evaluation_item ei " +
             "JOIN evaluation ev ON ei.evaluation_id = ev.id " +
             "JOIN partner_evaluation pe ON pe.id = ev.id " +
@@ -142,6 +143,26 @@ public class EvaluationItemDAO {
                         rs.getDouble("rate"), rs.getString("content")
                     );
                     item.setCategory(rs.getString("participation_category"));
+                    item.setParticipationId(rs.getInt("participation_id"));
+                    list.add(item);
+                }
+            }
+        }
+        return list;
+    }
+
+    private List<EvaluationItem> fetchItemsWithParticipation(String sql, int projectId) throws SQLException {
+        List<EvaluationItem> list = new ArrayList<>();
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, projectId);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    EvaluationItem item = new EvaluationItem(
+                        rs.getInt("id"), rs.getInt("evaluation_id"),
+                        rs.getDouble("rate"), rs.getString("content")
+                    );
+                    item.setParticipationId(rs.getInt("participation_id"));
                     list.add(item);
                 }
             }

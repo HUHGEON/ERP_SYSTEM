@@ -117,9 +117,33 @@ public class MainFrame extends JFrame {
 
         JButton logoutBtn = buildOutlineBtn("로그아웃");
         logoutBtn.addActionListener(e -> {
-            if (JOptionPane.showConfirmDialog(this, "로그아웃 하시겠습니까?",
-                    "로그아웃", JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION)
-                Main.logout(this);
+            JDialog dlg = new JDialog(this, "로그아웃", true);
+            boolean[] confirmed = {false};
+
+            JLabel msg = new JLabel("로그아웃 하시겠습니까?");
+            msg.setBorder(javax.swing.BorderFactory.createEmptyBorder(20, 30, 10, 30));
+            msg.setFont(msg.getFont().deriveFont(14f));
+
+            JButton yesBtn = new JButton("예");
+            JButton noBtn  = new JButton("아니오");
+            yesBtn.setPreferredSize(new Dimension(80, 30));
+            noBtn.setPreferredSize(new Dimension(80, 30));
+            yesBtn.addActionListener(ev -> { confirmed[0] = true; dlg.dispose(); });
+            noBtn.addActionListener(ev -> dlg.dispose());
+
+            JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 10));
+            btnPanel.add(yesBtn);
+            btnPanel.add(noBtn);
+
+            dlg.setLayout(new BorderLayout());
+            dlg.add(msg, BorderLayout.CENTER);
+            dlg.add(btnPanel, BorderLayout.SOUTH);
+            dlg.getRootPane().setDefaultButton(yesBtn);
+            dlg.pack();
+            dlg.setLocationRelativeTo(this);
+            dlg.setVisible(true);
+
+            if (confirmed[0]) Main.logout(this);
         });
 
         JPanel right = new JPanel(new FlowLayout(FlowLayout.RIGHT, 14, 0));

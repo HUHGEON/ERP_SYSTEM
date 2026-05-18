@@ -7,6 +7,7 @@ public class EvaluationItem {
     private String content;
     private String evaluatorName;
     private String category;
+    private int participationId;
 
     public EvaluationItem() {}
 
@@ -29,4 +30,6 @@ public class EvaluationItem {
     public void setEvaluatorName(String evaluatorName) { this.evaluatorName = evaluatorName; }
     public String getCategory() { return category; }
     public void setCategory(String category) { this.category = category; }
+    public int getParticipationId() { return participationId; }
+    public void setParticipationId(int participationId) { this.participationId = participationId; }
 }
