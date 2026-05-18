@@ -97,6 +97,24 @@ public class StudyActivityHistoryDAO {
         return list;
     }
 
+    public List<StudyActivityHistory> getByStudyId(int studyId) throws SQLException {
+        String sql = "SELECT h.id, h.study_id, s.study_name, h.activity_date, h.content " +
+                     "FROM study_activity_history h JOIN study s ON h.study_id = s.id " +
+                     "WHERE h.study_id = ? ORDER BY h.activity_date DESC";
+        List<StudyActivityHistory> list = new java.util.ArrayList<>();
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, studyId);
+            try (java.sql.ResultSet rs = ps.executeQuery()) {
+                while (rs.next())
+                    list.add(new StudyActivityHistory(
+                        rs.getInt("id"), rs.getInt("study_id"), rs.getString("study_name"),
+                        rs.getString("activity_date"), rs.getString("content")));
+            }
+        }
+        return list;
+    }
+
     public void delete(int id) throws SQLException {
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement("DELETE FROM study_activity_history WHERE id=?")) {

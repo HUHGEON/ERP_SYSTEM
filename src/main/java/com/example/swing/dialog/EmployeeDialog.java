@@ -48,14 +48,13 @@ public class EmployeeDialog extends JDialog {
         fc.insets = new Insets(5, 0, 5, 5);
         fc.gridwidth = GridBagConstraints.REMAINDER;
 
-        addRow(form, lc, fc, 0, "ID:", idField);
-        addRow(form, lc, fc, 1, "이름:", nameField);
-        addRow(form, lc, fc, 2, "직급:", gradeBox);
-        addRow(form, lc, fc, 3, "부서:", deptBox);
-        addRow(form, lc, fc, 4, "주민번호:", residentField);
-        addRow(form, lc, fc, 5, "학력:", educationField);
-        lc.gridy = 6;
-        fc.gridy = 6;
+        addRow(form, lc, fc, 0, "이름:", nameField);
+        addRow(form, lc, fc, 1, "직급:", gradeBox);
+        addRow(form, lc, fc, 2, "부서:", deptBox);
+        addRow(form, lc, fc, 3, "주민번호:", residentField);
+        addRow(form, lc, fc, 4, "학력:", educationField);
+        lc.gridy = 5;
+        fc.gridy = 5;
         form.add(techLabel, lc);
         form.add(techField, fc);
 

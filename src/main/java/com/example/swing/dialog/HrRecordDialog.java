@@ -37,7 +37,6 @@ public class HrRecordDialog extends JDialog {
         GridBagConstraints lc = lc(); GridBagConstraints fc = fc();
 
         idField.setEditable(false);
-        lc.gridy = 0; fc.gridy = 0; form.add(new JLabel("ID:"), lc); form.add(idField, fc);
         lc.gridy = 1; fc.gridy = 1; form.add(new JLabel("직원:"), lc); form.add(employeeBox, fc);
         lc.gridy = 2; fc.gridy = 2; form.add(new JLabel("입사일 (YYYY-MM-DD):"), lc); form.add(employmentField, fc);
         lc.gridy = 3; fc.gridy = 3; form.add(new JLabel("승진일 (YYYY-MM-DD, 선택):"), lc); form.add(promotionField, fc);

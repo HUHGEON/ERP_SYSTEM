@@ -64,7 +64,7 @@ public class LoginDialog extends JDialog {
 
         setContentPane(root);
         getRootPane().setDefaultButton(loginBtn);
-        setSize(520, 400);
+        setSize(560, 400);
         setResizable(false);
         setLocationRelativeTo(null);
         setDefaultCloseOperation(DISPOSE_ON_CLOSE);

@@ -38,7 +38,6 @@ public class StudyActivityHistoryDialog extends JDialog {
         contentArea.setLineWrap(true); contentArea.setWrapStyleWord(true);
         JScrollPane contentScroll = new JScrollPane(contentArea);
 
-        lc.gridy = 0; fc.gridy = 0; form.add(new JLabel("ID:"), lc); form.add(idField, fc);
         lc.gridy = 1; fc.gridy = 1; form.add(new JLabel("스터디:"), lc); form.add(studyBox, fc);
         lc.gridy = 2; fc.gridy = 2; form.add(new JLabel("활동일자 (YYYY-MM-DD):"), lc); form.add(dateField, fc);
         lc.gridy = 3; fc.gridy = 3; lc.anchor = GridBagConstraints.NORTHEAST;

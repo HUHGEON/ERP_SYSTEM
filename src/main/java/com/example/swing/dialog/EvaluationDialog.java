@@ -36,7 +36,6 @@ public class EvaluationDialog extends JDialog {
         GridBagConstraints lc = lc(); GridBagConstraints fc = fc();
 
         idField.setEditable(false);
-        lc.gridy = 0; fc.gridy = 0; form.add(new JLabel("ID:"), lc); form.add(idField, fc);
         lc.gridy = 1; fc.gridy = 1; form.add(new JLabel("프로젝트 투입:"), lc); form.add(participationBox, fc);
         lc.gridy = 2; fc.gridy = 2; form.add(new JLabel("평가 유형:"), lc); form.add(categoryBox, fc);
 

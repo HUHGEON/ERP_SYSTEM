@@ -57,7 +57,6 @@ public class MainFrame extends JFrame {
         reg("프로젝트",     "프로젝트",      new ProjectPanel());
         reg("프로젝트투입", "프로젝트 투입", new ProjectParticipationPanel());
         reg("스터디",       "스터디",        new StudyPanel());
-        reg("스터디활동",   "스터디 활동",   new StudyActivityHistoryPanel());
         reg("휴가기록",     "휴가 기록",     new LeavePanel());
 
         if (!menuBtns.isEmpty()) activateBtn(menuBtns.get(0), "직원 관리");
@@ -282,7 +281,6 @@ public class MainFrame extends JFrame {
 
         addSection(sb, "역량 개발");
         addItem(sb, "스터디",       "스터디");
-        addItem(sb, "스터디활동",   "스터디 활동");
 
         addSection(sb, "근태 관리");
         addItem(sb, "휴가기록",     "휴가 기록");

@@ -12,7 +12,7 @@ import java.util.List;
 
 public class StudyActivityHistoryPanel extends JPanel {
 
-    private static final String[] COLUMNS = {"ID", "스터디명", "활동일자", "내용"};
+    private static final String[] COLUMNS = {"스터디명", "활동일자", "내용"};
 
     private final boolean isAdmin = UserSession.getInstance().isAdmin();
     private final int myId = UserSession.getInstance().getEmployeeId();
@@ -71,7 +71,7 @@ public class StudyActivityHistoryPanel extends JPanel {
                 : dao.getByEmployeeId(myId);
             tableModel.setRowCount(0);
             for (StudyActivityHistory h : currentList)
-                tableModel.addRow(new Object[]{h.getId(), h.getStudyName(), h.getActivityDate(), h.getContent()});
+                tableModel.addRow(new Object[]{h.getStudyName(), h.getActivityDate(), h.getContent()});
         } catch (Exception ex) { JOptionPane.showMessageDialog(this, "오류: " + ex.getMessage(), "DB 오류", JOptionPane.ERROR_MESSAGE); }
     }
 

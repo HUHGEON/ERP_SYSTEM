@@ -42,7 +42,6 @@ public class ManagementDialog extends JDialog {
             JTextField nameField = new JTextField(mgmt.getEmployeeName());
             nameField.setEditable(false);
             permissionField.setText(mgmt.getPermissionLevel());
-            lc.gridy = 0; fc.gridy = 0; form.add(new JLabel("ID:"), lc); form.add(idField, fc);
             lc.gridy = 1; fc.gridy = 1; form.add(new JLabel("직원명:"), lc); form.add(nameField, fc);
             lc.gridy = 2; fc.gridy = 2; form.add(new JLabel("권한단계:"), lc); form.add(permissionField, fc);
         } else {

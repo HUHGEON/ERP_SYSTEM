@@ -39,7 +39,6 @@ public class OutputDialog extends JDialog {
         GridBagConstraints lc = lc(); GridBagConstraints fc = fc();
 
         idField.setEditable(false);
-        lc.gridy = 0; fc.gridy = 0; form.add(new JLabel("ID:"), lc); form.add(idField, fc);
         lc.gridy = 1; fc.gridy = 1; form.add(new JLabel("프로젝트:"), lc); form.add(projectBox, fc);
         lc.gridy = 2; fc.gridy = 2; form.add(new JLabel("산출물 유형:"), lc); form.add(typeField, fc);
         lc.gridy = 3; fc.gridy = 3; form.add(new JLabel("산출물명:"), lc); form.add(nameField, fc);
