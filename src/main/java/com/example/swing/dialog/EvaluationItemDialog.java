@@ -42,7 +42,6 @@ public class EvaluationItemDialog extends JDialog {
         contentArea.setLineWrap(true); contentArea.setWrapStyleWord(true);
         JScrollPane contentScroll = new JScrollPane(contentArea);
 
-        lc.gridy = 0; fc.gridy = 0; form.add(new JLabel("ID:"), lc); form.add(idField, fc);
         lc.gridy = 1; fc.gridy = 1; form.add(new JLabel("평가:"), lc); form.add(evaluationBox, fc);
         lc.gridy = 2; fc.gridy = 2; form.add(new JLabel("평점 (0.00~9.99):"), lc); form.add(rateField, fc);
         lc.gridy = 3; fc.gridy = 3; lc.anchor = GridBagConstraints.NORTHEAST;

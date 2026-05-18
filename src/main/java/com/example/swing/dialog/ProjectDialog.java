@@ -43,11 +43,10 @@ public class ProjectDialog extends JDialog {
         fc.insets = new Insets(5, 0, 5, 5);
         fc.gridwidth = GridBagConstraints.REMAINDER;
 
-        addRow(form, lc, fc, 0, "ID:", idField);
-        addRow(form, lc, fc, 1, "프로젝트명:", nameField);
-        addRow(form, lc, fc, 2, "발주처:", customerBox);
-        addRow(form, lc, fc, 3, "시작일 (YYYY-MM-DD):", startDateField);
-        addRow(form, lc, fc, 4, "종료일 (YYYY-MM-DD, 미입력=진행중):", endDateField);
+        addRow(form, lc, fc, 0, "프로젝트명:", nameField);
+        addRow(form, lc, fc, 1, "발주처:", customerBox);
+        addRow(form, lc, fc, 2, "시작일 (YYYY-MM-DD):", startDateField);
+        addRow(form, lc, fc, 3, "종료일 (YYYY-MM-DD, 미입력=진행중):", endDateField);
 
         idField.setEditable(false);
         if (isEdit) {

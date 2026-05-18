@@ -32,7 +32,6 @@ public class StudyDialog extends JDialog {
         fc.insets = new Insets(5, 0, 5, 5);
         fc.gridwidth = GridBagConstraints.REMAINDER;
 
-        lc.gridy = 0; fc.gridy = 0; form.add(new JLabel("ID:"), lc); form.add(idField, fc);
         lc.gridy = 1; fc.gridy = 1; form.add(new JLabel("스터디명:"), lc); form.add(nameField, fc);
         lc.gridy = 2; fc.gridy = 2; form.add(new JLabel("카테고리:"), lc); form.add(categoryField, fc);
 

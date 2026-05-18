@@ -43,7 +43,6 @@ public class DeveloperDialog extends JDialog {
             JTextField nameField = new JTextField(dev.getEmployeeName());
             nameField.setEditable(false);
             techField.setText(dev.getTech() != null ? dev.getTech() : "");
-            lc.gridy = 0; fc.gridy = 0; form.add(new JLabel("ID:"), lc); form.add(idField, fc);
             lc.gridy = 1; fc.gridy = 1; form.add(new JLabel("직원명:"), lc); form.add(nameField, fc);
             lc.gridy = 2; fc.gridy = 2; form.add(new JLabel("보유기술:"), lc); form.add(techField, fc);
         } else {

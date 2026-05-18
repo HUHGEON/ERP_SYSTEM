@@ -44,7 +44,6 @@ public class ProjectParticipationDialog extends JDialog {
         GridBagConstraints lc = lc(); GridBagConstraints fc = fc();
 
         idField.setEditable(false);
-        lc.gridy = 0; fc.gridy = 0; form.add(new JLabel("ID:"), lc); form.add(idField, fc);
         lc.gridy = 1; fc.gridy = 1; form.add(new JLabel("프로젝트:"), lc); form.add(projectBox, fc);
         lc.gridy = 2; fc.gridy = 2; form.add(new JLabel("개발자:"), lc); form.add(developerBox, fc);
         lc.gridy = 3; fc.gridy = 3; form.add(new JLabel("직무:"), lc); form.add(roleField, fc);
