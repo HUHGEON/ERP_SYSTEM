@@ -5,6 +5,7 @@ public class PartnerEvaluation {
     private int partnerId;
     private String partnerName;
     private String participationCategory;
+    private double avgRate;
 
     public PartnerEvaluation() {}
 
@@ -23,4 +24,6 @@ public class PartnerEvaluation {
     public void setPartnerName(String partnerName) { this.partnerName = partnerName; }
     public String getParticipationCategory() { return participationCategory; }
     public void setParticipationCategory(String participationCategory) { this.participationCategory = participationCategory; }
+    public double getAvgRate() { return avgRate; }
+    public void setAvgRate(double avgRate) { this.avgRate = avgRate; }
 }

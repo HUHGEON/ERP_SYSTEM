@@ -38,6 +38,36 @@ public class PmEvaluationDAO {
         return list;
     }
 
+    public List<PmEvaluation> searchByProjectId(int projectId) throws SQLException {
+        String sql =
+            "SELECT pe.id, pe.pm_id, e2.employee_name AS pm_name, ev.participation_category, " +
+            "COALESCE(AVG(ei.rate), 0) AS avg_rate " +
+            "FROM pm_evaluation pe " +
+            "JOIN developer d ON pe.pm_id = d.id " +
+            "JOIN employee e2 ON d.id = e2.id " +
+            "JOIN evaluation ev ON pe.id = ev.id " +
+            "JOIN project_participation pp ON ev.participation_id = pp.id " +
+            "LEFT JOIN evaluation_item ei ON ei.evaluation_id = ev.id " +
+            "WHERE pp.project_id = ? " +
+            "GROUP BY pe.id, pe.pm_id, e2.employee_name, ev.participation_category";
+        List<PmEvaluation> list = new ArrayList<>();
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, projectId);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    PmEvaluation pe = new PmEvaluation(
+                        rs.getInt("id"), rs.getInt("pm_id"),
+                        rs.getString("pm_name"), rs.getString("participation_category")
+                    );
+                    pe.setAvgRate(rs.getDouble("avg_rate"));
+                    list.add(pe);
+                }
+            }
+        }
+        return list;
+    }
+
     public void insert(PmEvaluation pe) throws SQLException {
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement("INSERT INTO pm_evaluation (id, pm_id) VALUES (?, ?)")) {
