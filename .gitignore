@@ -16,3 +16,6 @@ target/
 
 # Claude Code
 .claude/
+
+# 환경 설정 (DB/ERP 비밀번호 포함 - 절대 커밋 금지)
+src/main/resources/application.properties
