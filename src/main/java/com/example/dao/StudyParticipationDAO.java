@@ -41,6 +41,25 @@ public class StudyParticipationDAO {
         return list;
     }
 
+    public List<StudyParticipation> getByEmployeeId(int employeeId) throws SQLException {
+        String sql = "SELECT sp.id, sp.study_id, s.study_name, sp.employee_id, e.employee_name " +
+                     "FROM study_participation sp " +
+                     "JOIN study s ON sp.study_id = s.id " +
+                     "JOIN employee e ON sp.employee_id = e.id WHERE sp.employee_id = ? ORDER BY s.study_name";
+        List<StudyParticipation> list = new ArrayList<>();
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, employeeId);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    list.add(new StudyParticipation(rs.getInt("id"), rs.getInt("study_id"),
+                        rs.getString("study_name"), rs.getInt("employee_id"), rs.getString("employee_name")));
+                }
+            }
+        }
+        return list;
+    }
+
     public List<StudyParticipation> searchByStudyId(int studyId) throws SQLException {
         String sql = "SELECT sp.id, sp.study_id, s.study_name, sp.employee_id, e.employee_name " +
                      "FROM study_participation sp " +

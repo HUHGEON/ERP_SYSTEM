@@ -61,6 +61,20 @@ public class DeveloperDAO {
         return list;
     }
 
+    public Developer getById(int id) throws SQLException {
+        String sql = "SELECT d.id, e.employee_name, d.tech FROM developer d JOIN employee e ON d.id = e.id WHERE d.id=?";
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, id);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return new Developer(rs.getInt("id"), rs.getString("employee_name"), rs.getString("tech"));
+                }
+            }
+        }
+        return null;
+    }
+
     public void insert(Developer d) throws SQLException {
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement("INSERT INTO developer (id, tech) VALUES (?, ?)")) {

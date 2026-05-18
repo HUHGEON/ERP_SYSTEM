@@ -44,6 +44,28 @@ public class ProjectParticipationDAO {
         return list;
     }
 
+    public List<ProjectParticipation> getByDeveloperId(int developerId) throws SQLException {
+        String sql = "SELECT pp.id, pp.project_id, p.project_name, pp.developer_id, e.employee_name, " +
+                     "pp.project_role, pp.start_date, pp.end_date " +
+                     "FROM project_participation pp " +
+                     "JOIN project p ON pp.project_id = p.id " +
+                     "JOIN developer d ON pp.developer_id = d.id " +
+                     "JOIN employee e ON d.id = e.id WHERE pp.developer_id = ? ORDER BY pp.start_date DESC";
+        List<ProjectParticipation> list = new ArrayList<>();
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, developerId);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    list.add(new ProjectParticipation(rs.getInt("id"), rs.getInt("project_id"),
+                        rs.getString("project_name"), rs.getInt("developer_id"), rs.getString("employee_name"),
+                        rs.getString("project_role"), rs.getString("start_date"), rs.getString("end_date")));
+                }
+            }
+        }
+        return list;
+    }
+
     public List<ProjectParticipation> getAllParticipations() throws SQLException {
         List<ProjectParticipation> list = new ArrayList<>();
         try (Connection conn = DatabaseConnection.getConnection();
