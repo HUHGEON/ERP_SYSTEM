@@ -5,6 +5,7 @@ public class PmEvaluation {
     private int pmId;
     private String pmName;
     private String participationCategory;
+    private double avgRate;
 
     public PmEvaluation() {}
 
@@ -23,4 +24,6 @@ public class PmEvaluation {
     public void setPmName(String pmName) { this.pmName = pmName; }
     public String getParticipationCategory() { return participationCategory; }
     public void setParticipationCategory(String participationCategory) { this.participationCategory = participationCategory; }
+    public double getAvgRate() { return avgRate; }
+    public void setAvgRate(double avgRate) { this.avgRate = avgRate; }
 }

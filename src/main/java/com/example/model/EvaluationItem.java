@@ -5,6 +5,8 @@ public class EvaluationItem {
     private int evaluationId;
     private double rate;
     private String content;
+    private String evaluatorName;
+    private String category;
 
     public EvaluationItem() {}
 
@@ -23,4 +25,8 @@ public class EvaluationItem {
     public void setRate(double rate) { this.rate = rate; }
     public String getContent() { return content; }
     public void setContent(String content) { this.content = content; }
+    public String getEvaluatorName() { return evaluatorName; }
+    public void setEvaluatorName(String evaluatorName) { this.evaluatorName = evaluatorName; }
+    public String getCategory() { return category; }
+    public void setCategory(String category) { this.category = category; }
 }

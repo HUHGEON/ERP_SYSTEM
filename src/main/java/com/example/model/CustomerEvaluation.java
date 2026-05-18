@@ -5,6 +5,7 @@ public class CustomerEvaluation {
     private int customerId;
     private String customerName;
     private String participationCategory;
+    private double avgRate;
 
     public CustomerEvaluation() {}
 
@@ -23,4 +24,6 @@ public class CustomerEvaluation {
     public void setCustomerName(String customerName) { this.customerName = customerName; }
     public String getParticipationCategory() { return participationCategory; }
     public void setParticipationCategory(String participationCategory) { this.participationCategory = participationCategory; }
+    public double getAvgRate() { return avgRate; }
+    public void setAvgRate(double avgRate) { this.avgRate = avgRate; }
 }

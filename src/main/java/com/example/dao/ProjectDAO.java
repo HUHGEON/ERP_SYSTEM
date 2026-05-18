@@ -58,6 +58,10 @@ public class ProjectDAO {
         return list;
     }
 
+    public List<Project> getAll() throws SQLException {
+        return search(null, null);
+    }
+
     public int nextId() throws SQLException {
         try (Connection conn = DatabaseConnection.getConnection();
              Statement st = conn.createStatement();

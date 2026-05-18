@@ -37,6 +37,35 @@ public class CustomerEvaluationDAO {
         return list;
     }
 
+    public List<CustomerEvaluation> searchByProjectId(int projectId) throws SQLException {
+        String sql =
+            "SELECT ce.id, ce.customer_id, c.customer_name, ev.participation_category, " +
+            "COALESCE(AVG(ei.rate), 0) AS avg_rate " +
+            "FROM customer_evaluation ce " +
+            "JOIN customer c ON ce.customer_id = c.id " +
+            "JOIN evaluation ev ON ce.id = ev.id " +
+            "JOIN project_participation pp ON ev.participation_id = pp.id " +
+            "LEFT JOIN evaluation_item ei ON ei.evaluation_id = ev.id " +
+            "WHERE pp.project_id = ? " +
+            "GROUP BY ce.id, ce.customer_id, c.customer_name, ev.participation_category";
+        List<CustomerEvaluation> list = new ArrayList<>();
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, projectId);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    CustomerEvaluation ce = new CustomerEvaluation(
+                        rs.getInt("id"), rs.getInt("customer_id"),
+                        rs.getString("customer_name"), rs.getString("participation_category")
+                    );
+                    ce.setAvgRate(rs.getDouble("avg_rate"));
+                    list.add(ce);
+                }
+            }
+        }
+        return list;
+    }
+
     public void insert(CustomerEvaluation ce) throws SQLException {
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement("INSERT INTO customer_evaluation (id, customer_id) VALUES (?, ?)")) {
