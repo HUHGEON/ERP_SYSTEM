@@ -7,6 +7,8 @@ import com.example.swing.dialog.EmployeeDialog;
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.util.List;
 
 public class EmployeePanel extends JPanel {
@@ -24,11 +26,17 @@ public class EmployeePanel extends JPanel {
     private final JComboBox<String> gradeBox = new JComboBox<>(GRADES);
     private final JComboBox<String> deptBox = new JComboBox<>(DEPARTMENTS);
 
+    private final EmployeeDetailPanel detailPanel = new EmployeeDetailPanel();
+    private final JSplitPane splitPane;
+
     private List<Employee> currentList;
 
     public EmployeePanel() {
-        setLayout(new BorderLayout(5, 5));
-        setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+        setLayout(new BorderLayout());
+
+        // 상단 영역: 검색 + 테이블 + 버튼
+        JPanel topPanel = new JPanel(new BorderLayout(5, 5));
+        topPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 5, 10));
 
         JPanel searchPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
         searchPanel.add(new JLabel("이름:"));
@@ -54,10 +62,24 @@ public class EmployeePanel extends JPanel {
         btnPanel.add(editBtn);
         btnPanel.add(deleteBtn);
 
-        add(searchPanel, BorderLayout.NORTH);
-        add(new JScrollPane(table), BorderLayout.CENTER);
-        add(btnPanel, BorderLayout.SOUTH);
+        topPanel.add(searchPanel, BorderLayout.NORTH);
+        topPanel.add(new JScrollPane(table), BorderLayout.CENTER);
+        topPanel.add(btnPanel, BorderLayout.SOUTH);
 
+        // 하단 상세 패널
+        JPanel bottomWrapper = new JPanel(new BorderLayout());
+        bottomWrapper.setBorder(BorderFactory.createEmptyBorder(0, 10, 10, 10));
+        bottomWrapper.add(detailPanel, BorderLayout.CENTER);
+
+        // 분할 패인
+        splitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT, topPanel, bottomWrapper);
+        splitPane.setResizeWeight(0.55);
+        splitPane.setDividerSize(6);
+        splitPane.setOneTouchExpandable(true);
+
+        add(splitPane, BorderLayout.CENTER);
+
+        // 이벤트
         searchBtn.addActionListener(e -> loadData());
         resetBtn.addActionListener(e -> {
             nameField.setText("");
@@ -73,7 +95,26 @@ public class EmployeePanel extends JPanel {
         });
         deleteBtn.addActionListener(e -> deleteSelected());
 
+        // 더블클릭 → 하단 상세 패널 로드
+        table.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                if (e.getClickCount() == 2) {
+                    int row = table.getSelectedRow();
+                    if (row >= 0) {
+                        detailPanel.loadEmployee(currentList.get(row));
+                        // 하단이 너무 작으면 적당한 위치로 이동
+                        if (splitPane.getDividerLocation() > splitPane.getHeight() - 180) {
+                            splitPane.setDividerLocation(0.55);
+                        }
+                    }
+                }
+            }
+        });
+
         loadData();
+        // 초기 divider 위치: 전체 높이의 55% (나중에 패널이 렌더링된 후 적용)
+        SwingUtilities.invokeLater(() -> splitPane.setDividerLocation(0.55));
     }
 
     private void loadData() {
@@ -119,11 +160,6 @@ public class EmployeePanel extends JPanel {
         }
     }
 
-    private void showInfo(String msg) {
-        JOptionPane.showMessageDialog(this, msg);
-    }
-
-    private void showError(String msg) {
-        JOptionPane.showMessageDialog(this, msg, "오류", JOptionPane.ERROR_MESSAGE);
-    }
+    private void showInfo(String msg) { JOptionPane.showMessageDialog(this, msg); }
+    private void showError(String msg) { JOptionPane.showMessageDialog(this, msg, "오류", JOptionPane.ERROR_MESSAGE); }
 }

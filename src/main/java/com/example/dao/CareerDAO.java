@@ -35,6 +35,23 @@ public class CareerDAO {
         return list;
     }
 
+    public List<Career> getByEmployeeId(int employeeId) throws SQLException {
+        String sql = "SELECT c.id, c.employee_id, e.employee_name, c.company_name, c.start_time, c.end_time " +
+                     "FROM career c JOIN employee e ON c.employee_id = e.id WHERE c.employee_id = ? ORDER BY c.start_time DESC";
+        List<Career> list = new ArrayList<>();
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, employeeId);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    list.add(new Career(rs.getInt("id"), rs.getInt("employee_id"), rs.getString("employee_name"),
+                        rs.getString("company_name"), rs.getString("start_time"), rs.getString("end_time")));
+                }
+            }
+        }
+        return list;
+    }
+
     public int nextId() throws SQLException {
         try (Connection conn = DatabaseConnection.getConnection();
              Statement st = conn.createStatement();

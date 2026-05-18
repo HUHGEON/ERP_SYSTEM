@@ -35,6 +35,22 @@ public class HrRecordDAO {
         return list;
     }
 
+    public HrRecord getByEmployeeId(int employeeId) throws SQLException {
+        String sql = "SELECT h.id, h.employee_id, e.employee_name, h.employment_data, h.promotion_date " +
+                     "FROM hr_records h JOIN employee e ON h.employee_id = e.id WHERE h.employee_id = ?";
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, employeeId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return new HrRecord(rs.getInt("id"), rs.getInt("employee_id"),
+                        rs.getString("employee_name"), rs.getString("employment_data"), rs.getString("promotion_date"));
+                }
+            }
+        }
+        return null;
+    }
+
     public int nextId() throws SQLException {
         try (Connection conn = DatabaseConnection.getConnection();
              Statement st = conn.createStatement();

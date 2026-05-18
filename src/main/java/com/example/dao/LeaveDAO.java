@@ -45,6 +45,24 @@ public class LeaveDAO {
         return list;
     }
 
+    public List<LeaveRecord> getByEmployeeId(int employeeId) throws SQLException {
+        String sql = "SELECT lr.id, lr.employee_id, e.employee_name, lr.leave_type, lr.start_date, lr.end_date " +
+                     "FROM leave_records lr JOIN employee e ON lr.employee_id = e.id WHERE lr.employee_id = ? ORDER BY lr.start_date DESC";
+        List<LeaveRecord> list = new ArrayList<>();
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, employeeId);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    list.add(new LeaveRecord(rs.getInt("id"), rs.getInt("employee_id"),
+                        rs.getString("employee_name"), rs.getString("leave_type"),
+                        rs.getString("start_date"), rs.getString("end_date")));
+                }
+            }
+        }
+        return list;
+    }
+
     public List<Employee> getAllEmployees() throws SQLException {
         List<Employee> list = new ArrayList<>();
         try (Connection conn = DatabaseConnection.getConnection();
