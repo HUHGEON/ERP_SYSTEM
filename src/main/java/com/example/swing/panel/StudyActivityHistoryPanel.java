@@ -3,6 +3,7 @@ package com.example.swing.panel;
 import com.example.dao.StudyActivityHistoryDAO;
 import com.example.model.StudyActivityHistory;
 import com.example.swing.dialog.StudyActivityHistoryDialog;
+import com.example.util.UserSession;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
@@ -12,6 +13,9 @@ import java.util.List;
 public class StudyActivityHistoryPanel extends JPanel {
 
     private static final String[] COLUMNS = {"ID", "스터디명", "활동일자", "내용"};
+
+    private final boolean isAdmin = UserSession.getInstance().isAdmin();
+    private final int myId = UserSession.getInstance().getEmployeeId();
 
     private final StudyActivityHistoryDAO dao = new StudyActivityHistoryDAO();
     private final DefaultTableModel tableModel = new DefaultTableModel(COLUMNS, 0) {
@@ -42,6 +46,12 @@ public class StudyActivityHistoryPanel extends JPanel {
         add(new JScrollPane(table), BorderLayout.CENTER);
         add(btnPanel, BorderLayout.SOUTH);
 
+        if (!isAdmin) {
+            searchPanel.setVisible(false);
+            editBtn.setVisible(false);
+            deleteBtn.setVisible(false);
+        }
+
         searchBtn.addActionListener(e -> loadData());
         resetBtn.addActionListener(e -> { studyField.setText(""); loadData(); });
         addBtn.addActionListener(e -> openDialog(null));
@@ -56,7 +66,9 @@ public class StudyActivityHistoryPanel extends JPanel {
 
     private void loadData() {
         try {
-            currentList = dao.search(studyField.getText().trim());
+            currentList = isAdmin
+                ? dao.search(studyField.getText().trim())
+                : dao.getByEmployeeId(myId);
             tableModel.setRowCount(0);
             for (StudyActivityHistory h : currentList)
                 tableModel.addRow(new Object[]{h.getId(), h.getStudyName(), h.getActivityDate(), h.getContent()});

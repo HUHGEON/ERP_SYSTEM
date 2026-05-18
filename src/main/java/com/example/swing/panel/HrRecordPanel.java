@@ -3,15 +3,20 @@ package com.example.swing.panel;
 import com.example.dao.HrRecordDAO;
 import com.example.model.HrRecord;
 import com.example.swing.dialog.HrRecordDialog;
+import com.example.util.UserSession;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
+import java.util.ArrayList;
 import java.util.List;
 
 public class HrRecordPanel extends JPanel {
 
     private static final String[] COLUMNS = {"ID", "직원명", "입사일", "승진일"};
+
+    private final boolean isAdmin = UserSession.getInstance().isAdmin();
+    private final int myId = UserSession.getInstance().getEmployeeId();
 
     private final HrRecordDAO dao = new HrRecordDAO();
     private final DefaultTableModel tableModel = new DefaultTableModel(COLUMNS, 0) {
@@ -43,6 +48,13 @@ public class HrRecordPanel extends JPanel {
         add(new JScrollPane(table), BorderLayout.CENTER);
         add(btnPanel, BorderLayout.SOUTH);
 
+        if (!isAdmin) {
+            searchPanel.setVisible(false);
+            addBtn.setVisible(false);
+            editBtn.setVisible(false);
+            deleteBtn.setVisible(false);
+        }
+
         searchBtn.addActionListener(e -> loadData());
         resetBtn.addActionListener(e -> { nameField.setText(""); loadData(); });
         addBtn.addActionListener(e -> openDialog(null));
@@ -57,9 +69,16 @@ public class HrRecordPanel extends JPanel {
 
     private void loadData() {
         try {
-            currentList = dao.search(nameField.getText().trim());
+            if (!isAdmin) {
+                currentList = new ArrayList<>();
+                HrRecord r = dao.getByEmployeeId(myId);
+                if (r != null) currentList.add(r);
+            } else {
+                currentList = dao.search(nameField.getText().trim());
+            }
             tableModel.setRowCount(0);
-            for (HrRecord h : currentList) tableModel.addRow(new Object[]{h.getId(), h.getEmployeeName(), h.getEmploymentData(), h.getPromotionDate()});
+            for (HrRecord h : currentList)
+                tableModel.addRow(new Object[]{h.getId(), h.getEmployeeName(), h.getEmploymentData(), h.getPromotionDate()});
         } catch (Exception ex) { JOptionPane.showMessageDialog(this, "오류: " + ex.getMessage(), "DB 오류", JOptionPane.ERROR_MESSAGE); }
     }
 

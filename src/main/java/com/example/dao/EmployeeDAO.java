@@ -46,6 +46,28 @@ public class EmployeeDAO {
         return list;
     }
 
+    public List<Employee> getByEmployeeId(int employeeId) throws SQLException {
+        String sql = "SELECT * FROM employee WHERE id = ?";
+        List<Employee> list = new ArrayList<>();
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, employeeId);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    list.add(new Employee(
+                        rs.getInt("id"),
+                        rs.getString("employee_name"),
+                        rs.getString("grade"),
+                        MaskingUtil.maskResidentNumber(rs.getString("resident_number")),
+                        rs.getString("education"),
+                        rs.getString("department")
+                    ));
+                }
+            }
+        }
+        return list;
+    }
+
     public int nextId() throws SQLException {
         try (Connection conn = DatabaseConnection.getConnection();
              Statement st = conn.createStatement();

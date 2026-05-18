@@ -3,6 +3,7 @@ package com.example.swing.panel;
 import com.example.dao.ProjectParticipationDAO;
 import com.example.model.ProjectParticipation;
 import com.example.swing.dialog.ProjectParticipationDialog;
+import com.example.util.UserSession;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
@@ -12,6 +13,9 @@ import java.util.List;
 public class ProjectParticipationPanel extends JPanel {
 
     private static final String[] COLUMNS = {"ID", "프로젝트명", "개발자명", "역할", "투입일", "종료일"};
+
+    private final boolean isAdmin = UserSession.getInstance().isAdmin();
+    private final int myId = UserSession.getInstance().getEmployeeId();
 
     private final ProjectParticipationDAO dao = new ProjectParticipationDAO();
     private final DefaultTableModel tableModel = new DefaultTableModel(COLUMNS, 0) {
@@ -44,6 +48,13 @@ public class ProjectParticipationPanel extends JPanel {
         add(new JScrollPane(table), BorderLayout.CENTER);
         add(btnPanel, BorderLayout.SOUTH);
 
+        if (!isAdmin) {
+            searchPanel.setVisible(false);
+            addBtn.setVisible(false);
+            editBtn.setVisible(false);
+            deleteBtn.setVisible(false);
+        }
+
         searchBtn.addActionListener(e -> loadData());
         resetBtn.addActionListener(e -> { projectField.setText(""); devField.setText(""); loadData(); });
         addBtn.addActionListener(e -> openDialog(null));
@@ -58,7 +69,9 @@ public class ProjectParticipationPanel extends JPanel {
 
     private void loadData() {
         try {
-            currentList = dao.search(projectField.getText().trim(), devField.getText().trim());
+            currentList = isAdmin
+                ? dao.search(projectField.getText().trim(), devField.getText().trim())
+                : dao.getByDeveloperId(myId);
             tableModel.setRowCount(0);
             for (ProjectParticipation pp : currentList)
                 tableModel.addRow(new Object[]{pp.getId(), pp.getProjectName(), pp.getDeveloperName(),

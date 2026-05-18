@@ -3,6 +3,7 @@ package com.example.swing.panel;
 import com.example.dao.LeaveDAO;
 import com.example.model.LeaveRecord;
 import com.example.swing.dialog.LeaveDialog;
+import com.example.util.UserSession;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
@@ -13,6 +14,9 @@ public class LeavePanel extends JPanel {
 
     private static final String[] LEAVE_TYPES = {"", "연차", "병가", "경조사", "무급휴가"};
     private static final String[] COLUMNS = {"ID", "직원 이름", "휴가 종류", "시작일", "종료일"};
+
+    private final boolean isAdmin = UserSession.getInstance().isAdmin();
+    private final int myId = UserSession.getInstance().getEmployeeId();
 
     private final LeaveDAO dao = new LeaveDAO();
     private final DefaultTableModel tableModel = new DefaultTableModel(COLUMNS, 0) {
@@ -54,6 +58,13 @@ public class LeavePanel extends JPanel {
         add(new JScrollPane(table), BorderLayout.CENTER);
         add(btnPanel, BorderLayout.SOUTH);
 
+        if (!isAdmin) {
+            searchPanel.setVisible(false);
+            addBtn.setVisible(false);
+            editBtn.setVisible(false);
+            deleteBtn.setVisible(false);
+        }
+
         searchBtn.addActionListener(e -> loadData());
         resetBtn.addActionListener(e -> {
             nameField.setText("");
@@ -73,7 +84,9 @@ public class LeavePanel extends JPanel {
 
     private void loadData() {
         try {
-            currentList = dao.search(nameField.getText().trim(), (String) leaveTypeBox.getSelectedItem());
+            currentList = isAdmin
+                ? dao.search(nameField.getText().trim(), (String) leaveTypeBox.getSelectedItem())
+                : dao.getByEmployeeId(myId);
             tableModel.setRowCount(0);
             for (LeaveRecord lr : currentList) {
                 tableModel.addRow(new Object[]{

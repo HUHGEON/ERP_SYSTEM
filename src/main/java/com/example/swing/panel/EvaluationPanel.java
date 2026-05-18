@@ -5,6 +5,7 @@ import com.example.dao.ProjectDAO;
 import com.example.model.EvaluationItem;
 import com.example.model.EvaluatorSummary;
 import com.example.model.Project;
+import com.example.util.UserSession;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
@@ -23,6 +24,9 @@ public class EvaluationPanel extends JPanel {
     private static final Color STAR_COLOR   = new Color(255, 180, 0);
     private static final Color AVG_BG       = new Color(248, 249, 250);
     private static final Color PM_NAME_COLOR = new Color(66, 133, 244);
+
+    private final boolean isAdmin = UserSession.getInstance().isAdmin();
+    private final int myId = UserSession.getInstance().getEmployeeId();
 
     private final ProjectDAO        projectDAO = new ProjectDAO();
     private final EvaluationItemDAO itemDAO    = new EvaluationItemDAO();
@@ -63,9 +67,11 @@ public class EvaluationPanel extends JPanel {
         projectPanel.add(title, BorderLayout.NORTH);
         projectPanel.add(new JScrollPane(projectTable), BorderLayout.CENTER);
 
-        // 평가 탭
+        // 평가 탭 (비관리자는 고객 평가 탭 숨김)
         JTabbedPane tabs = new JTabbedPane();
-        tabs.addTab("고객 평가", buildSimpleTab(customerAvgLabel, customerCardPanel));
+        if (isAdmin) {
+            tabs.addTab("고객 평가", buildSimpleTab(customerAvgLabel, customerCardPanel));
+        }
         tabs.addTab("PM 평가",   buildSimpleTab(pmAvgLabel,       pmCardPanel));
         tabs.addTab("동료 평가", buildPartnerTab());
 
@@ -151,7 +157,9 @@ public class EvaluationPanel extends JPanel {
 
     private void loadProjects() {
         try {
-            projectList = projectDAO.getAll();
+            projectList = isAdmin
+                ? projectDAO.getAll()
+                : projectDAO.getCompletedByEmployeeId(myId);
             projectModel.setRowCount(0);
             for (Project p : projectList)
                 projectModel.addRow(new Object[]{p.getProjectName(), p.getCustomerName(), p.getStatus()});
