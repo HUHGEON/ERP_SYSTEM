@@ -8,7 +8,13 @@ public class Main {
             try {
                 UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
             } catch (Exception ignored) {}
-            new MainFrame().setVisible(true);
+
+            LoginDialog login = new LoginDialog();
+            login.setVisible(true);
+
+            if (login.isAuthenticated()) {
+                new MainFrame().setVisible(true);
+            }
         });
     }
 }

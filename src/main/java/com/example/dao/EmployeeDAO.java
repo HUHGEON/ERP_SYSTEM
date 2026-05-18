@@ -1,6 +1,7 @@
 package com.example.dao;
 
 import com.example.model.Employee;
+import com.example.util.MaskingUtil;
 
 import java.sql.*;
 import java.util.ArrayList;
@@ -35,7 +36,7 @@ public class EmployeeDAO {
                         rs.getInt("id"),
                         rs.getString("employee_name"),
                         rs.getString("grade"),
-                        rs.getString("resident_number"),
+                        MaskingUtil.maskResidentNumber(rs.getString("resident_number")),
                         rs.getString("education"),
                         rs.getString("department")
                     ));
