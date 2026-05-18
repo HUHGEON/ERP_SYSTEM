@@ -74,6 +74,7 @@ export/               # DB 스키마 및 산출물
 ├── CMM_DDL.sql
 ├── CMM_DML.sql
 └── CMM.png
+
 ```
 
 ## 실행 방법
@@ -82,3 +83,19 @@ export/               # DB 스키마 및 산출물
 2. IntelliJ IDEA에서 프로젝트 열기
 3. `mysql-connector-j` JAR을 classpath에 추가
 4. `com.example.swing.Main` 실행
+
+
+## Git Workflow & Convention
+
+### 1. 브랜치 전략
+- 모든 작업은 Issue를 기반으로 하며, 브랜치명은 이슈 번호를 접두어로 사용합니다.
+- 구조: `feature/#{이슈번호}` (예: `feature/#5-login-api`)
+
+### 2. 작업 프로세스 (Issue + PR)
+1. **Issue 발행**: 구현할 기능이나 수정할 버그에 대해 이슈를 생성하고 번호를 할당받습니다.
+2. **브랜치 생성**: 할당된 이슈 번호를 사용하여 로컬 브랜치를 생성합니다.
+3. **Draft PR 생성**: 작업을 시작하면서 GitHub에 **Draft Pull Request**를 생성하여 작업 현황을 공유합니다.
+4. **리뷰 및 머지**: 작업이 완료되면 Draft 상태를 해제하고 팀원들의 리뷰를 거친 후 `main` 브랜치에 머지합니다.
+
+### 3. 커밋 메시지 가이드
+- `feat #이슈번호: 요약 내용` 형식으로 작성하여 이슈와 커밋을 연동합니다.
