@@ -9,6 +9,8 @@ import com.example.model.ProjectParticipation;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.FocusAdapter;
+import java.awt.event.FocusEvent;
 import java.util.List;
 
 public class ProjectParticipationDialog extends JDialog {
@@ -73,10 +75,28 @@ public class ProjectParticipationDialog extends JDialog {
         add(form, BorderLayout.CENTER);
         add(btnPanel, BorderLayout.SOUTH);
 
+        endField.addFocusListener(new FocusAdapter() {
+            @Override public void focusLost(FocusEvent e) { validateDates(); }
+        });
+        startField.addFocusListener(new FocusAdapter() {
+            @Override public void focusLost(FocusEvent e) { validateDates(); }
+        });
+
         saveBtn.addActionListener(e -> save());
         cancelBtn.addActionListener(e -> dispose());
         getRootPane().setDefaultButton(saveBtn);
         pack(); setResizable(false); setLocationRelativeTo(parent);
+    }
+
+    private boolean validateDates() {
+        String start = startField.getText().trim();
+        String end = endField.getText().trim();
+        if (!start.isEmpty() && !end.isEmpty() && end.compareTo(start) < 0) {
+            endField.setBackground(new Color(255, 200, 200));
+            return false;
+        }
+        endField.setBackground(UIManager.getColor("TextField.background"));
+        return true;
     }
 
     private void save() {
@@ -84,6 +104,10 @@ public class ProjectParticipationDialog extends JDialog {
         if (start.isEmpty()) { JOptionPane.showMessageDialog(this, "투입일을 입력하세요."); return; }
         if (projectBox.getSelectedItem() == null || developerBox.getSelectedItem() == null) {
             JOptionPane.showMessageDialog(this, "프로젝트와 개발자를 선택하세요."); return;
+        }
+        if (!validateDates()) {
+            JOptionPane.showMessageDialog(this, "종료일이 투입일보다 이전일 수 없습니다.", "날짜 오류", JOptionPane.ERROR_MESSAGE);
+            return;
         }
         try {
             int id = Integer.parseInt(idField.getText().trim());

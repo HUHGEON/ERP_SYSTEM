@@ -1,18 +1,18 @@
 package com.example.swing.dialog;
 
 import com.example.dao.ProjectDAO;
-import com.example.model.Customer;
 import com.example.model.Project;
 
 import javax.swing.*;
 import java.awt.*;
-import java.util.List;
+import java.awt.event.FocusAdapter;
+import java.awt.event.FocusEvent;
 
 public class ProjectDialog extends JDialog {
 
     private final JTextField idField = new JTextField(10);
     private final JTextField nameField = new JTextField(20);
-    private final JComboBox<Customer> customerBox = new JComboBox<>();
+    private final JTextField customerField = new JTextField(20);
     private final JTextField startDateField = new JTextField(12);
     private final JTextField endDateField = new JTextField(12);
 
@@ -24,13 +24,6 @@ public class ProjectDialog extends JDialog {
         super(parent, project == null ? "프로젝트 추가" : "프로젝트 수정", true);
         this.dao = dao;
         this.isEdit = project != null;
-
-        try {
-            List<Customer> customers = dao.getAllCustomers();
-            for (Customer c : customers) customerBox.addItem(c);
-        } catch (Exception ex) {
-            JOptionPane.showMessageDialog(this, "발주처 목록 로드 실패: " + ex.getMessage());
-        }
 
         JPanel form = new JPanel(new GridBagLayout());
         form.setBorder(BorderFactory.createEmptyBorder(15, 20, 10, 20));
@@ -44,7 +37,7 @@ public class ProjectDialog extends JDialog {
         fc.gridwidth = GridBagConstraints.REMAINDER;
 
         addRow(form, lc, fc, 0, "프로젝트명:", nameField);
-        addRow(form, lc, fc, 1, "발주처:", customerBox);
+        addRow(form, lc, fc, 1, "발주처:", customerField);
         addRow(form, lc, fc, 2, "시작일 (YYYY-MM-DD):", startDateField);
         addRow(form, lc, fc, 3, "종료일 (YYYY-MM-DD, 미입력=진행중):", endDateField);
 
@@ -52,12 +45,7 @@ public class ProjectDialog extends JDialog {
         if (isEdit) {
             idField.setText(String.valueOf(project.getId()));
             nameField.setText(project.getProjectName());
-            for (int i = 0; i < customerBox.getItemCount(); i++) {
-                if (customerBox.getItemAt(i).getId() == project.getCustomerId()) {
-                    customerBox.setSelectedIndex(i);
-                    break;
-                }
-            }
+            customerField.setText(project.getCustomerName() != null ? project.getCustomerName() : "");
             startDateField.setText(project.getStartDate() != null ? project.getStartDate() : "");
             endDateField.setText(project.getEndDate() != null ? project.getEndDate() : "");
         } else {
@@ -74,6 +62,13 @@ public class ProjectDialog extends JDialog {
         add(form, BorderLayout.CENTER);
         add(btnPanel, BorderLayout.SOUTH);
 
+        endDateField.addFocusListener(new FocusAdapter() {
+            @Override public void focusLost(FocusEvent e) { validateDates(); }
+        });
+        startDateField.addFocusListener(new FocusAdapter() {
+            @Override public void focusLost(FocusEvent e) { validateDates(); }
+        });
+
         saveBtn.addActionListener(e -> save());
         cancelBtn.addActionListener(e -> dispose());
         getRootPane().setDefaultButton(saveBtn);
@@ -81,6 +76,17 @@ public class ProjectDialog extends JDialog {
         pack();
         setResizable(false);
         setLocationRelativeTo(parent);
+    }
+
+    private boolean validateDates() {
+        String start = startDateField.getText().trim();
+        String end = endDateField.getText().trim();
+        if (!start.isEmpty() && !end.isEmpty() && end.compareTo(start) < 0) {
+            endDateField.setBackground(new Color(255, 200, 200));
+            return false;
+        }
+        endDateField.setBackground(UIManager.getColor("TextField.background"));
+        return true;
     }
 
     private void addRow(JPanel form, GridBagConstraints lc, GridBagConstraints fc, int row, String label, JComponent field) {
@@ -94,16 +100,21 @@ public class ProjectDialog extends JDialog {
         String name = nameField.getText().trim();
         String startDate = startDateField.getText().trim();
 
+        String customerName = customerField.getText().trim();
         if (name.isEmpty()) { JOptionPane.showMessageDialog(this, "프로젝트명을 입력하세요."); return; }
+        if (customerName.isEmpty()) { JOptionPane.showMessageDialog(this, "발주처를 입력하세요."); return; }
         if (startDate.isEmpty()) { JOptionPane.showMessageDialog(this, "시작일을 입력하세요."); return; }
-        if (customerBox.getSelectedItem() == null) { JOptionPane.showMessageDialog(this, "발주처를 선택하세요."); return; }
+        if (!validateDates()) {
+            JOptionPane.showMessageDialog(this, "종료일이 시작일보다 이전일 수 없습니다.", "날짜 오류", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
 
         try {
             int id = Integer.parseInt(idField.getText().trim());
-            Customer customer = (Customer) customerBox.getSelectedItem();
+            int customerId = dao.findOrCreateCustomer(customerName);
             String endDate = endDateField.getText().trim();
 
-            Project p = new Project(id, customer.getId(), customer.getCustomerName(),
+            Project p = new Project(id, customerId, customerName,
                 name, startDate, endDate.isEmpty() ? null : endDate);
             if (isEdit) dao.update(p); else dao.insert(p);
             saved = true;

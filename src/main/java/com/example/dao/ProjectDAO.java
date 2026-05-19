@@ -58,6 +58,31 @@ public class ProjectDAO {
         return list;
     }
 
+    /** 이름으로 고객을 찾고, 없으면 신규 생성 후 id 반환 */
+    public int findOrCreateCustomer(String name) throws SQLException {
+        try (Connection conn = DatabaseConnection.getConnection()) {
+            try (PreparedStatement ps = conn.prepareStatement(
+                    "SELECT id FROM customer WHERE customer_name = ?")) {
+                ps.setString(1, name);
+                try (ResultSet rs = ps.executeQuery()) {
+                    if (rs.next()) return rs.getInt(1);
+                }
+            }
+            int newId;
+            try (Statement st = conn.createStatement();
+                 ResultSet rs = st.executeQuery("SELECT COALESCE(MAX(id), 0) + 1 FROM customer")) {
+                newId = rs.next() ? rs.getInt(1) : 1;
+            }
+            try (PreparedStatement ps = conn.prepareStatement(
+                    "INSERT INTO customer(id, customer_name) VALUES(?, ?)")) {
+                ps.setInt(1, newId);
+                ps.setString(2, name);
+                ps.executeUpdate();
+            }
+            return newId;
+        }
+    }
+
     public List<Project> getAll() throws SQLException {
         return search(null, null);
     }

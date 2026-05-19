@@ -6,6 +6,8 @@ import com.example.model.LeaveRecord;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.FocusAdapter;
+import java.awt.event.FocusEvent;
 import java.util.List;
 
 public class LeaveDialog extends JDialog {
@@ -76,6 +78,13 @@ public class LeaveDialog extends JDialog {
         add(form, BorderLayout.CENTER);
         add(btnPanel, BorderLayout.SOUTH);
 
+        endDateField.addFocusListener(new FocusAdapter() {
+            @Override public void focusLost(FocusEvent e) { validateDates(); }
+        });
+        startDateField.addFocusListener(new FocusAdapter() {
+            @Override public void focusLost(FocusEvent e) { validateDates(); }
+        });
+
         saveBtn.addActionListener(e -> save());
         cancelBtn.addActionListener(e -> dispose());
         getRootPane().setDefaultButton(saveBtn);
@@ -85,6 +94,17 @@ public class LeaveDialog extends JDialog {
         setLocationRelativeTo(parent);
     }
 
+    private boolean validateDates() {
+        String start = startDateField.getText().trim();
+        String end = endDateField.getText().trim();
+        if (!start.isEmpty() && !end.isEmpty() && end.compareTo(start) < 0) {
+            endDateField.setBackground(new Color(255, 200, 200));
+            return false;
+        }
+        endDateField.setBackground(UIManager.getColor("TextField.background"));
+        return true;
+    }
+
     private void save() {
         String startDate = startDateField.getText().trim();
         String endDate = endDateField.getText().trim();
@@ -92,6 +112,10 @@ public class LeaveDialog extends JDialog {
         if (employeeBox.getSelectedItem() == null) { JOptionPane.showMessageDialog(this, "직원을 선택하세요."); return; }
         if (startDate.isEmpty()) { JOptionPane.showMessageDialog(this, "시작일을 입력하세요."); return; }
         if (endDate.isEmpty()) { JOptionPane.showMessageDialog(this, "종료일을 입력하세요."); return; }
+        if (!validateDates()) {
+            JOptionPane.showMessageDialog(this, "종료일이 시작일보다 이전일 수 없습니다.", "날짜 오류", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
 
         try {
             int id = Integer.parseInt(idField.getText().trim());
