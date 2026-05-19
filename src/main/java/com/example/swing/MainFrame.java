@@ -34,6 +34,8 @@ public class MainFrame extends JFrame {
     private final List<JButton>              menuBtns     = new ArrayList<>();
     private JButton                          activeBtn;
     private final java.util.Map<String, List<JButton>> sectionItems = new java.util.LinkedHashMap<>();
+    private final java.util.Map<String, JButton>       keyToBtn   = new java.util.HashMap<>();
+    private final java.util.Map<String, JPanel>        keyToPanel = new java.util.HashMap<>();
     private String                           currentSectionKey = null;
     private JPanel                           sidebar;
 
@@ -68,6 +70,18 @@ public class MainFrame extends JFrame {
     private void reg(String key, String title, JPanel panel) {
         panel.putClientProperty("pageTitle", title);
         contentPanel.add(panel, key);
+        keyToPanel.put(key, panel);
+    }
+
+    /** 사이드바 항목을 클릭한 것과 동일하게 콘텐츠 패널을 전환한다. */
+    public void navigateTo(String cardKey) {
+        JButton btn = keyToBtn.get(cardKey);
+        if (btn != null) btn.doClick();
+    }
+
+    /** 등록된 콘텐츠 패널을 cardKey로 조회한다. */
+    public JPanel getContentPanel(String cardKey) {
+        return keyToPanel.get(cardKey);
     }
 
     // ── 콘텐츠 래퍼 ─────────────────────────────────────────────
@@ -405,6 +419,7 @@ public class MainFrame extends JFrame {
         });
 
         menuBtns.add(btn);
+        keyToBtn.put(cardKey, btn);
         if (currentSectionKey != null) sectionItems.get(currentSectionKey).add(btn);
         parent.add(btn);
     }

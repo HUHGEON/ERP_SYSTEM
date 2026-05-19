@@ -123,6 +123,30 @@ public class LeavePanel extends JPanel {
         }
     }
 
+    /** 외부 호출: 휴가 id로 행 선택. 필터/권한으로 안 보이면 필터 초기화 후 재시도. */
+    public void selectLeaveById(int leaveId) {
+        if (!selectRow(leaveId)) {
+            if (isAdmin) {
+                nameField.setText("");
+                leaveTypeBox.setSelectedIndex(0);
+            }
+            loadData();
+            selectRow(leaveId);
+        }
+    }
+
+    private boolean selectRow(int leaveId) {
+        if (currentList == null) return false;
+        for (int i = 0; i < currentList.size(); i++) {
+            if (currentList.get(i).getId() == leaveId) {
+                table.setRowSelectionInterval(i, i);
+                table.scrollRectToVisible(table.getCellRect(i, 0, true));
+                return true;
+            }
+        }
+        return false;
+    }
+
     private void showInfo(String msg) { JOptionPane.showMessageDialog(this, msg); }
     private void showError(String msg) { JOptionPane.showMessageDialog(this, msg, "오류", JOptionPane.ERROR_MESSAGE); }
 }

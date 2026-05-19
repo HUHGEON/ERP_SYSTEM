@@ -2,11 +2,15 @@ package com.example.swing.panel;
 
 import com.example.dao.*;
 import com.example.model.*;
+import com.example.swing.MainFrame;
 
 import javax.swing.*;
 import javax.swing.border.TitledBorder;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.util.ArrayList;
 import java.util.List;
 
 public class EmployeeDetailPanel extends JPanel {
@@ -51,6 +55,16 @@ public class EmployeeDetailPanel extends JPanel {
 
     private final JTabbedPane tabs = new JTabbedPane();
     private int projectTabIndex = -1;
+
+    // 행 → 도메인 id 매핑 (모델에는 표시 컬럼만 두고 id는 별도 보관)
+    private final List<Integer> projectIds = new ArrayList<>();
+    private final List<Integer> leaveIds   = new ArrayList<>();
+    private final List<Integer> studyIds   = new ArrayList<>();
+
+    private final JTable careerTable;
+    private final JTable projectTable;
+    private final JTable leaveTable;
+    private final JTable studyTable;
 
     public EmployeeDetailPanel() {
         setLayout(new BorderLayout(0, 4));
@@ -111,11 +125,23 @@ public class EmployeeDetailPanel extends JPanel {
         gc.fill = GridBagConstraints.NONE;
 
         // 탭 (프로젝트 탭도 생성자에서 미리 추가하여 MainFrame.styleAllTables가 헤더 스타일을 적용하도록 함)
-        tabs.addTab("경력", new JScrollPane(makeTable(careerModel)));
-        tabs.addTab("프로젝트", new JScrollPane(makeTable(projectModel)));
-        tabs.addTab("휴가", new JScrollPane(makeTable(leaveModel)));
-        tabs.addTab("스터디", new JScrollPane(makeTable(studyModel)));
+        careerTable  = makeTable(careerModel);
+        projectTable = makeTable(projectModel);
+        leaveTable   = makeTable(leaveModel);
+        studyTable   = makeTable(studyModel);
+        tabs.addTab("경력",   new JScrollPane(careerTable));
+        tabs.addTab("프로젝트", new JScrollPane(projectTable));
+        tabs.addTab("휴가",   new JScrollPane(leaveTable));
+        tabs.addTab("스터디", new JScrollPane(studyTable));
         projectTabIndex = 1;
+
+        // 더블클릭으로 해당 페이지 이동 + 항목 선택
+        attachDoubleClickNav(projectTable, projectIds, "프로젝트", (mf, id) ->
+            ((ProjectPanel) mf.getContentPanel("프로젝트")).selectProjectById(id));
+        attachDoubleClickNav(leaveTable, leaveIds, "휴가기록", (mf, id) ->
+            ((LeavePanel) mf.getContentPanel("휴가기록")).selectLeaveById(id));
+        attachDoubleClickNav(studyTable, studyIds, "스터디", (mf, id) ->
+            ((StudyPanel) mf.getContentPanel("스터디")).selectStudyById(id));
 
         add(headerPanel, BorderLayout.NORTH);
         add(tabs, BorderLayout.CENTER);
@@ -140,6 +166,26 @@ public class EmployeeDetailPanel extends JPanel {
         table.getTableHeader().setReorderingAllowed(false);
         table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         return table;
+    }
+
+    @FunctionalInterface
+    private interface NavAction { void run(MainFrame mf, int id); }
+
+    private void attachDoubleClickNav(JTable table, List<Integer> idList, String cardKey, NavAction action) {
+        table.addMouseListener(new MouseAdapter() {
+            @Override public void mouseClicked(MouseEvent e) {
+                if (e.getClickCount() != 2) return;
+                int row = table.rowAtPoint(e.getPoint());
+                if (row < 0 || row >= idList.size()) return;
+                int id = idList.get(row);
+                Window w = SwingUtilities.getWindowAncestor(EmployeeDetailPanel.this);
+                if (!(w instanceof MainFrame)) return;
+                MainFrame mf = (MainFrame) w;
+                mf.navigateTo(cardKey);
+                try { action.run(mf, id); }
+                catch (Exception ex) { /* 대상 패널 미초기화 등은 무시 */ }
+            }
+        });
     }
 
     public void loadEmployee(Employee emp) {
@@ -195,28 +241,34 @@ public class EmployeeDetailPanel extends JPanel {
 
         // 프로젝트 투입 (개발자만)
         projectModel.setRowCount(0);
+        projectIds.clear();
         if (isDev) {
             try {
                 for (ProjectParticipation pp : projectDAO.getByDeveloperId(emp.getId())) {
                     String end = (pp.getEndDate() != null && !pp.getEndDate().isEmpty()) ? pp.getEndDate() : "진행중";
                     projectModel.addRow(new Object[]{pp.getProjectName(), pp.getProjectRole(), pp.getStartDate(), end});
+                    projectIds.add(pp.getProjectId());
                 }
             } catch (Exception ignored) {}
         }
 
         // 휴가
         leaveModel.setRowCount(0);
+        leaveIds.clear();
         try {
             for (LeaveRecord lr : leaveDAO.getByEmployeeId(emp.getId())) {
                 leaveModel.addRow(new Object[]{lr.getLeaveType(), lr.getStartDate(), lr.getEndDate()});
+                leaveIds.add(lr.getId());
             }
         } catch (Exception ignored) {}
 
         // 스터디
         studyModel.setRowCount(0);
+        studyIds.clear();
         try {
             for (StudyParticipation sp : studyDAO.getByEmployeeId(emp.getId())) {
                 studyModel.addRow(new Object[]{sp.getStudyName()});
+                studyIds.add(sp.getStudyId());
             }
         } catch (Exception ignored) {}
     }
