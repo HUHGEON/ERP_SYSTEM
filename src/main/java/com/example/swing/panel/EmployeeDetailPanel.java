@@ -28,9 +28,9 @@ public class EmployeeDetailPanel extends JPanel {
     private final JLabel gradeLabel     = new JLabel();
     private final JLabel deptLabel      = new JLabel();
     private final JLabel hireDateLabel  = new JLabel();
-    private final JLabel promotionLabel = new JLabel();
-    private final JLabel salaryLabel    = new JLabel();
-    private final JLabel techLabel      = new JLabel();
+    private final JLabel promotionLabel      = new JLabel();
+    private final JLabel remainingLeaveLabel = new JLabel();
+    private final JLabel techLabel           = new JLabel();
     private final JPanel techRow;
 
     private final JLabel permissionLabel = new JLabel();
@@ -93,8 +93,8 @@ public class EmployeeDetailPanel extends JPanel {
         addHeaderCell(headerPanel, gc, 6, 0, "입사일", hireDateLabel, new Color(34, 139, 34));
         addHeaderCell(headerPanel, gc, 8, 0, "승진일", promotionLabel, new Color(34, 139, 34));
 
-        // 두 번째 줄 앞: 연봉
-        addHeaderCell(headerPanel, gc, 0, 1, "연봉", salaryLabel, new Color(160, 60, 180));
+        // 두 번째 줄 앞: 잔여연차
+        addHeaderCell(headerPanel, gc, 0, 1, "잔여연차", remainingLeaveLabel, new Color(160, 60, 180));
 
         // 두 번째 줄: 기술스택 (개발자만 표시)
         techRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 4, 0));
@@ -198,7 +198,14 @@ public class EmployeeDetailPanel extends JPanel {
         gradeLabel.setText(emp.getGrade());
         deptLabel.setText(emp.getDepartment());
         hireDateLabel.setText(emp.getHireDate() != null ? emp.getHireDate() : "-");
-        salaryLabel.setText(emp.getSalary() > 0 ? (emp.getSalary() / 10000) + "만원" : "-");
+
+        // 잔여연차
+        try {
+            int remaining = leaveDAO.getRemainingLeaveDays(emp.getId());
+            remainingLeaveLabel.setText(remaining + "일");
+        } catch (Exception e) {
+            remainingLeaveLabel.setText("-");
+        }
 
         // 인사 기록 (가장 최근 승진일)
         try {
@@ -231,9 +238,6 @@ public class EmployeeDetailPanel extends JPanel {
                 permissionLabel.setText("-");
             }
         }
-
-        // 프로젝트 투입 탭 (개발자만 활성화)
-        tabs.setEnabledAt(projectTabIndex, isDev);
 
         // 경력
         careerModel.setRowCount(0);

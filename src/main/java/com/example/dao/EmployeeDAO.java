@@ -2,7 +2,6 @@ package com.example.dao;
 
 import com.example.model.Employee;
 import com.example.model.Position;
-import com.example.util.MaskingUtil;
 
 import java.sql.*;
 import java.util.ArrayList;
@@ -22,12 +21,13 @@ public class EmployeeDAO {
         emp.setPositionId(rs.getInt("position_id"));
         emp.setEmployeeName(rs.getString("employee_name"));
         emp.setGrade(rs.getString("grade"));
-        emp.setResidentNumber(MaskingUtil.maskResidentNumber(rs.getString("resident_number")));
+        emp.setResidentNumber(rs.getString("resident_number"));
         emp.setEducation(rs.getString("education"));
         emp.setDepartment(rs.getString("department"));
         emp.setPhoneNumber(rs.getString("phone_number"));
         emp.setEmail(rs.getString("email"));
-        emp.setHireDate(rs.getString("hire_date"));
+        java.sql.Date hd = rs.getDate("hire_date");
+        emp.setHireDate(hd != null ? hd.toString() : null);
         emp.setSalary(rs.getInt("salary"));
         return emp;
     }

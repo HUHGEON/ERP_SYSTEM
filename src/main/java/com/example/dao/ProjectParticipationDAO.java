@@ -36,7 +36,7 @@ public class ProjectParticipationDAO {
                     list.add(new ProjectParticipation(
                         rs.getInt("id"), rs.getInt("project_id"), rs.getString("project_name"),
                         rs.getInt("developer_id"), rs.getString("employee_name"),
-                        rs.getString("project_role"), rs.getString("start_date"), rs.getString("end_date")
+                        rs.getString("project_role"), dateStr(rs, "start_date"), dateStr(rs, "end_date")
                     ));
                 }
             }
@@ -59,7 +59,7 @@ public class ProjectParticipationDAO {
                 while (rs.next()) {
                     list.add(new ProjectParticipation(rs.getInt("id"), rs.getInt("project_id"),
                         rs.getString("project_name"), rs.getInt("developer_id"), rs.getString("employee_name"),
-                        rs.getString("project_role"), rs.getString("start_date"), rs.getString("end_date")));
+                        rs.getString("project_role"), dateStr(rs, "start_date"), dateStr(rs, "end_date")));
                 }
             }
         }
@@ -82,7 +82,7 @@ public class ProjectParticipationDAO {
                     list.add(new ProjectParticipation(
                         rs.getInt("id"), rs.getInt("project_id"), rs.getString("project_name"),
                         rs.getInt("developer_id"), rs.getString("employee_name"),
-                        rs.getString("project_role"), rs.getString("start_date"), rs.getString("end_date")));
+                        rs.getString("project_role"), dateStr(rs, "start_date"), dateStr(rs, "end_date")));
                 }
             }
         }
@@ -106,7 +106,7 @@ public class ProjectParticipationDAO {
                     return new ProjectParticipation(
                         rs.getInt("id"), rs.getInt("project_id"), rs.getString("project_name"),
                         rs.getInt("developer_id"), rs.getString("employee_name"),
-                        rs.getString("project_role"), rs.getString("start_date"), rs.getString("end_date"));
+                        rs.getString("project_role"), dateStr(rs, "start_date"), dateStr(rs, "end_date"));
                 }
             }
         }
@@ -128,7 +128,7 @@ public class ProjectParticipationDAO {
                 list.add(new ProjectParticipation(
                     rs.getInt("id"), rs.getInt("project_id"), rs.getString("project_name"),
                     rs.getInt("developer_id"), rs.getString("employee_name"),
-                    rs.getString("project_role"), rs.getString("start_date"), rs.getString("end_date")
+                    rs.getString("project_role"), dateStr(rs, "start_date"), dateStr(rs, "end_date")
                 ));
             }
         }
@@ -185,5 +185,10 @@ public class ProjectParticipationDAO {
             ps.setInt(1, id);
             ps.executeUpdate();
         }
+    }
+
+    private static String dateStr(ResultSet rs, String col) throws SQLException {
+        java.sql.Date d = rs.getDate(col);
+        return d != null ? d.toString() : null;
     }
 }

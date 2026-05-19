@@ -36,8 +36,8 @@ public class LeaveDAO {
                         rs.getInt("employee_id"),
                         rs.getString("employee_name"),
                         rs.getString("leave_type"),
-                        rs.getString("start_date"),
-                        rs.getString("end_date")
+                        dateStr(rs, "start_date"),
+                        dateStr(rs, "end_date")
                     ));
                 }
             }
@@ -56,7 +56,7 @@ public class LeaveDAO {
                 while (rs.next()) {
                     list.add(new LeaveRecord(rs.getInt("id"), rs.getInt("employee_id"),
                         rs.getString("employee_name"), rs.getString("leave_type"),
-                        rs.getString("start_date"), rs.getString("end_date")));
+                        dateStr(rs, "start_date"), dateStr(rs, "end_date")));
                 }
             }
         }
@@ -118,6 +118,11 @@ public class LeaveDAO {
             ps.setInt(1, id);
             ps.executeUpdate();
         }
+    }
+
+    private static String dateStr(ResultSet rs, String col) throws SQLException {
+        java.sql.Date d = rs.getDate(col);
+        return d != null ? d.toString() : null;
     }
 
     public int getRemainingLeaveDays(int employeeId) throws SQLException {

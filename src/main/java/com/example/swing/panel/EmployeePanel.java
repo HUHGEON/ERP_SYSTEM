@@ -3,20 +3,23 @@ package com.example.swing.panel;
 import com.example.dao.EmployeeDAO;
 import com.example.model.Employee;
 import com.example.swing.dialog.EmployeeDialog;
+import com.example.util.MaskingUtil;
 import com.example.util.UserSession;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
+import javax.swing.table.TableRowSorter;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.util.Comparator;
 import java.util.List;
 
 public class EmployeePanel extends JPanel {
 
     private static final String[] GRADES = {"", "사원", "대리", "과장", "부장", "이사"};
     private static final String[] DEPARTMENTS = {"", "개발자", "마케팅", "경영관리", "연구개발"};
-    private static final String[] COLUMNS = {"ID", "이름", "직급", "부서", "전화번호", "이메일", "연봉", "학력"};
+    private static final String[] COLUMNS = {"ID", "이름", "직급", "부서", "주민번호", "전화번호", "이메일", "연봉", "학력"};
 
     private final boolean isAdmin = UserSession.getInstance().isAdmin();
     private final int myId = UserSession.getInstance().getEmployeeId();
@@ -25,6 +28,7 @@ public class EmployeePanel extends JPanel {
     private final DefaultTableModel tableModel = new DefaultTableModel(COLUMNS, 0) {
         @Override public boolean isCellEditable(int r, int c) { return false; }
     };
+    private final TableRowSorter<DefaultTableModel> sorter = new TableRowSorter<>(tableModel);
     private final JTable table = new JTable(tableModel);
     private final JTextField nameField = new JTextField(12);
     private final JComboBox<String> gradeBox = new JComboBox<>(GRADES);
@@ -58,6 +62,13 @@ public class EmployeePanel extends JPanel {
         table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         table.getTableHeader().setReorderingAllowed(false);
         table.setRowHeight(24);
+        table.setRowSorter(sorter);
+        // ID(0): 숫자 정렬, 연봉(7): 숫자 정렬 ("만원" 제거 후 비교), 나머지: 기본 문자열
+        sorter.setComparator(0, Comparator.comparingInt(a -> Integer.parseInt(a.toString())));
+        sorter.setComparator(7, Comparator.comparingInt(a -> {
+            String s = a.toString().replace("만원", "").trim();
+            try { return Integer.parseInt(s); } catch (NumberFormatException e) { return 0; }
+        }));
 
         JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
         JButton addBtn = new JButton("추가");
@@ -103,7 +114,7 @@ public class EmployeePanel extends JPanel {
         editBtn.addActionListener(e -> {
             int row = table.getSelectedRow();
             if (row < 0) { showInfo("수정할 직원을 선택하세요."); return; }
-            openDialog(currentList.get(row));
+            openDialog(currentList.get(sorter.convertRowIndexToModel(row)));
         });
         deleteBtn.addActionListener(e -> deleteSelected());
 
@@ -112,7 +123,7 @@ public class EmployeePanel extends JPanel {
             if (!e.getValueIsAdjusting()) {
                 int row = table.getSelectedRow();
                 if (row >= 0) {
-                    detailPanel.loadEmployee(currentList.get(row));
+                    detailPanel.loadEmployee(currentList.get(sorter.convertRowIndexToModel(row)));
                     detailShowing = true;
                     splitPane.setDividerLocation(0.55);
                 } else {
@@ -154,6 +165,7 @@ public class EmployeePanel extends JPanel {
             for (Employee e : currentList) {
                 tableModel.addRow(new Object[]{
                     e.getId(), e.getEmployeeName(), e.getGrade(), e.getDepartment(),
+                    MaskingUtil.maskResidentNumber(e.getResidentNumber()),
                     e.getPhoneNumber(), e.getEmail(),
                     e.getSalary() > 0 ? (e.getSalary() / 10000) + "만원" : "-",
                     e.getEducation()
@@ -174,7 +186,7 @@ public class EmployeePanel extends JPanel {
     private void deleteSelected() {
         int row = table.getSelectedRow();
         if (row < 0) { showInfo("삭제할 직원을 선택하세요."); return; }
-        Employee emp = currentList.get(row);
+        Employee emp = currentList.get(sorter.convertRowIndexToModel(row));
         int confirm = JOptionPane.showConfirmDialog(this,
             "'" + emp.getEmployeeName() + "' 직원을 삭제하시겠습니까?",
             "삭제 확인", JOptionPane.YES_NO_OPTION);

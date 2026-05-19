@@ -269,7 +269,7 @@ public class SeminarPanel extends JPanel {
             )
         ));
         card.setAlignmentX(Component.LEFT_ALIGNMENT);
-        card.setMaximumSize(new Dimension(Integer.MAX_VALUE, Integer.MAX_VALUE));
+        card.setMaximumSize(new Dimension(Integer.MAX_VALUE, 75));
 
         JPanel topRow = new JPanel(new BorderLayout());
         topRow.setBackground(CARD_BG);
