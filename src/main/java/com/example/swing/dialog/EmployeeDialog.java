@@ -8,17 +8,20 @@ import com.example.model.Position;
 import com.example.util.MaskingUtil;
 
 import javax.swing.*;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 import java.awt.*;
 import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 
 public class EmployeeDialog extends JDialog {
 
     private static final String[] DEPARTMENTS = {"개발자", "마케팅", "경영관리", "연구개발"};
 
-    private final JTextField idField       = new JTextField(10);
-    private final JTextField nameField     = new JTextField(15);
-    private final JComboBox<Position> positionBox = new JComboBox<>();
+    private final JTextField idField        = new JTextField(10);
+    private final JTextField nameField      = new JTextField(15);
+    private final JLabel     positionLabel  = new JLabel("-");
     private final JComboBox<String> deptBox = new JComboBox<>(DEPARTMENTS);
     private final JTextField residentField = new JTextField(15);
     private final JTextField educationField = new JTextField(20);
@@ -30,6 +33,7 @@ public class EmployeeDialog extends JDialog {
 
     private final EmployeeDAO dao;
     private final DeveloperDAO developerDAO = new DeveloperDAO();
+    private List<Position> allPositions;
     private boolean saved = false;
     private final boolean isEdit;
 
@@ -40,11 +44,13 @@ public class EmployeeDialog extends JDialog {
 
         // 직급 목록 로드
         try {
-            List<Position> positions = dao.getAllPositions();
-            for (Position p : positions) positionBox.addItem(p);
+            allPositions = dao.getAllPositions();
         } catch (Exception ex) {
             JOptionPane.showMessageDialog(this, "직급 목록 로드 실패: " + ex.getMessage());
         }
+
+        positionLabel.setFont(positionLabel.getFont().deriveFont(Font.BOLD));
+        positionLabel.setForeground(new Color(25, 50, 120));
 
         JPanel form = new JPanel(new GridBagLayout());
         form.setBorder(BorderFactory.createEmptyBorder(15, 20, 10, 20));
@@ -58,7 +64,7 @@ public class EmployeeDialog extends JDialog {
         fc.gridwidth = GridBagConstraints.REMAINDER;
 
         addRow(form, lc, fc, 0, "이름:", nameField);
-        addRow(form, lc, fc, 1, "직급:", positionBox);
+        addRow(form, lc, fc, 1, "직급 (자동):", positionLabel);
         addRow(form, lc, fc, 2, "부서:", deptBox);
         addRow(form, lc, fc, 3, "주민번호:", residentField);
         addRow(form, lc, fc, 4, "학력:", educationField);
@@ -70,6 +76,12 @@ public class EmployeeDialog extends JDialog {
         form.add(techField, fc);
 
         idField.setEditable(false);
+        hireDateField.getDocument().addDocumentListener(new DocumentListener() {
+            public void insertUpdate(DocumentEvent e)  { updatePositionLabel(); }
+            public void removeUpdate(DocumentEvent e)  { updatePositionLabel(); }
+            public void changedUpdate(DocumentEvent e) { updatePositionLabel(); }
+        });
+
         if (!isEdit) {
             MaskingUtil.installResidentFilter(residentField);
             hireDateField.setText(LocalDate.now().toString());
@@ -77,12 +89,6 @@ public class EmployeeDialog extends JDialog {
         if (isEdit) {
             idField.setText(String.valueOf(emp.getId()));
             nameField.setText(emp.getEmployeeName());
-            // 직급 선택
-            for (int i = 0; i < positionBox.getItemCount(); i++) {
-                if (positionBox.getItemAt(i).getId() == emp.getPositionId()) {
-                    positionBox.setSelectedIndex(i); break;
-                }
-            }
             deptBox.setSelectedItem(emp.getDepartment());
             residentField.setText(emp.getResidentNumber());
             educationField.setText(emp.getEducation());
@@ -121,6 +127,29 @@ public class EmployeeDialog extends JDialog {
         setLocationRelativeTo(parent);
     }
 
+    private void updatePositionLabel() {
+        Position p = calcPositionByHireDate(hireDateField.getText().trim());
+        positionLabel.setText(p != null ? p.getPositionName() : "-");
+    }
+
+    private Position calcPositionByHireDate(String hireDateStr) {
+        if (allPositions == null || hireDateStr.isEmpty()) return null;
+        try {
+            LocalDate hireDate = LocalDate.parse(hireDateStr);
+            long years = ChronoUnit.YEARS.between(hireDate, LocalDate.now());
+            String name;
+            if (years < 2)      name = "사원";
+            else if (years < 4) name = "대리";
+            else if (years < 6) name = "과장";
+            else if (years < 8) name = "부장";
+            else                name = "이사";
+            for (Position p : allPositions) {
+                if (p.getPositionName().equals(name)) return p;
+            }
+        } catch (Exception ignored) {}
+        return null;
+    }
+
     private void updateTechFieldState() {
         boolean isDev = "개발자".equals(deptBox.getSelectedItem());
         techLabel.setEnabled(isDev);
@@ -149,11 +178,12 @@ public class EmployeeDialog extends JDialog {
         if (resident.isEmpty())  { JOptionPane.showMessageDialog(this, "주민번호를 입력하세요."); return; }
         if (education.isEmpty()) { JOptionPane.showMessageDialog(this, "학력을 입력하세요."); return; }
         if (hireDate.isEmpty())  { JOptionPane.showMessageDialog(this, "입사일을 입력하세요."); return; }
-        if (positionBox.getSelectedItem() == null) { JOptionPane.showMessageDialog(this, "직급을 선택하세요."); return; }
+
+        Position pos = calcPositionByHireDate(hireDate);
+        if (pos == null) { JOptionPane.showMessageDialog(this, "입사일 형식이 올바르지 않습니다. (YYYY-MM-DD)"); return; }
 
         try {
             int id = Integer.parseInt(idField.getText().trim());
-            Position pos = (Position) positionBox.getSelectedItem();
 
             Employee emp = new Employee();
             emp.setId(id);
