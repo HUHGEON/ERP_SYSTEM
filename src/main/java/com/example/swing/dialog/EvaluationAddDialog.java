@@ -3,6 +3,7 @@ package com.example.swing.dialog;
 import com.example.dao.DatabaseConnection;
 import com.example.dao.ProjectParticipationDAO;
 import com.example.model.ProjectParticipation;
+import com.example.util.ComboAutoComplete;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
@@ -26,9 +27,9 @@ class NameOnlyRenderer extends DefaultListCellRenderer {
  * 평가 추가 다이얼로그 – EvaluationPanel 전용.
  *
  * TYPE별 동작:
- *  CUSTOMER  (관리자 전용): participation_id = 선택 참여자, customer_id = 프로젝트 고객
- *  PM        (모든 사용자): participation_id = 평가자 참여(직원 본인 or 관리자 선택), pm_id = 선택 PM developer
- *  PARTNER   (모든 사용자): participation_id = 평가자 참여, partner_id = 선택 동료 developer, 본인 제외
+ *  CUSTOMER  (관리자 전용): 프로젝트명 표시, 고객 표시, participation_id = 첫 번째 참여자 자동
+ *  PM        (모든 사용자): 프로젝트명 표시, 평가자 = 참여자 콤보(관리자) or 본인, PM = PM역할 콤보(기본선택)
+ *  PARTNER   (모든 사용자): 프로젝트명 표시, 평가자 = 참여자 콤보(관리자) or 본인, 동료 = 참여자 콤보
  */
 public class EvaluationAddDialog extends JDialog {
 
@@ -42,11 +43,12 @@ public class EvaluationAddDialog extends JDialog {
     private final ProjectParticipation myParticipation;
 
     private final ProjectParticipationDAO ppDAO = new ProjectParticipationDAO();
+    private List<ProjectParticipation> members;
 
     // ── 위젯 ──
     /** 관리자용: 평가자 참여 선택 */
     private JComboBox<ProjectParticipation> evaluatorBox;
-    /** 고객/PM/파트너 평가 대상 선택 */
+    /** PM/파트너 평가 대상 선택 */
     private JComboBox<ProjectParticipation> targetBox;
     private JComboBox<String> categoryBox;
     private JTextField rateField;
@@ -63,6 +65,13 @@ public class EvaluationAddDialog extends JDialog {
         this.isAdmin = isAdmin;
         this.myParticipation = myParticipation;
 
+        try {
+            members = ppDAO.getByProjectId(projectId);
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(this, "참여자 로드 실패: " + ex.getMessage());
+            members = List.of();
+        }
+
         buildUI();
         pack();
         setMinimumSize(new Dimension(460, 0));
@@ -78,39 +87,32 @@ public class EvaluationAddDialog extends JDialog {
     }
 
     private void buildUI() {
-        List<ProjectParticipation> members;
-        try {
-            members = ppDAO.getByProjectId(projectId);
-        } catch (Exception ex) {
-            JOptionPane.showMessageDialog(this, "참여자 로드 실패: " + ex.getMessage());
-            members = List.of();
-        }
-
         JPanel form = new JPanel(new GridBagLayout());
         form.setBorder(new EmptyBorder(15, 20, 10, 20));
         int row = 0;
 
-        // ── 관리자만: 평가자(참여자) 선택 ──
-        if (isAdmin && type != Type.CUSTOMER) {
-            evaluatorBox = new JComboBox<>();
-            evaluatorBox.setRenderer(new NameOnlyRenderer());
-            for (ProjectParticipation pp : members) evaluatorBox.addItem(pp);
-            addRow(form, row++, "평가자 (참여자):", evaluatorBox);
-        }
+        // ── 프로젝트명 (모든 타입 공통) ──
+        JLabel projectLabel = new JLabel(fetchProjectName());
+        projectLabel.setForeground(new Color(33, 100, 200));
+        addRow(form, row++, "프로젝트:", projectLabel);
 
-        // ── 고객 평가: 평가 대상 참여자 선택 ──
+        // ── 고객 평가: 고객 이름 표시 ──
         if (type == Type.CUSTOMER) {
-            targetBox = new JComboBox<>();
-            targetBox.setRenderer(new NameOnlyRenderer());
-            for (ProjectParticipation pp : members) targetBox.addItem(pp);
-            addRow(form, row++, "평가 대상:", targetBox);
-
             JLabel custLabel = new JLabel(fetchCustomerName());
             custLabel.setForeground(new Color(66, 133, 244));
             addRow(form, row++, "고객:", custLabel);
         }
 
-        // ── PM 평가: PM(developer) 선택 ──
+        // ── 관리자만: 평가자(참여자) 선택 (PM·PARTNER) ──
+        if (isAdmin && type != Type.CUSTOMER) {
+            evaluatorBox = new JComboBox<>();
+            evaluatorBox.setRenderer(new NameOnlyRenderer());
+            for (ProjectParticipation pp : members) evaluatorBox.addItem(pp);
+            ComboAutoComplete.apply(evaluatorBox);
+            addRow(form, row++, "평가자 (참여자):", evaluatorBox);
+        }
+
+        // ── PM 평가: PM 역할 참여자 콤보, 첫 PM 기본 선택 ──
         if (type == Type.PM) {
             targetBox = new JComboBox<>();
             targetBox.setRenderer(new NameOnlyRenderer());
@@ -120,10 +122,11 @@ public class EvaluationAddDialog extends JDialog {
             if (targetBox.getItemCount() == 0) {
                 for (ProjectParticipation pp : members) targetBox.addItem(pp);
             }
+            ComboAutoComplete.apply(targetBox);
             addRow(form, row++, "평가할 PM:", targetBox);
         }
 
-        // ── 동료 평가: 동료(developer) 선택, 본인 제외 ──
+        // ── 동료 평가: 동료(본인 제외) 콤보 ──
         if (type == Type.PARTNER) {
             targetBox = new JComboBox<>();
             targetBox.setRenderer(new NameOnlyRenderer());
@@ -134,6 +137,7 @@ public class EvaluationAddDialog extends JDialog {
             if (targetBox.getItemCount() == 0) {
                 JOptionPane.showMessageDialog(this, "평가할 동료가 없습니다.");
             }
+            ComboAutoComplete.apply(targetBox);
             addRow(form, row++, "평가할 동료:", targetBox);
         }
 
@@ -143,7 +147,7 @@ public class EvaluationAddDialog extends JDialog {
             addRow(form, row++, "카테고리:", categoryBox);
         }
 
-        // ── 평점 (1.0~5.0) ── 소수점 1자리까지만 입력, 저장 시 범위 검증
+        // ── 평점 ──
         rateField = new JTextField(8);
         rateField.setHorizontalAlignment(JTextField.LEFT);
         ((javax.swing.text.AbstractDocument) rateField.getDocument()).setDocumentFilter(new javax.swing.text.DocumentFilter() {
@@ -211,14 +215,16 @@ public class EvaluationAddDialog extends JDialog {
         try (Connection conn = DatabaseConnection.getConnection()) {
             conn.setAutoCommit(false);
             try {
-                int evalId   = nextId(conn, "evaluation");
-                int itemId   = nextId(conn, "evaluation_item");
+                int evalId  = nextId(conn, "evaluation");
+                int itemId  = nextId(conn, "evaluation_item");
 
                 int participationId;
                 if (type == Type.CUSTOMER) {
-                    ProjectParticipation target = (ProjectParticipation) targetBox.getSelectedItem();
-                    if (target == null) { JOptionPane.showMessageDialog(this, "평가 대상을 선택하세요."); return; }
-                    participationId = target.getId();
+                    // 고객 평가는 프로젝트 단위 — 첫 번째 참여자를 participation_id로 사용
+                    if (members.isEmpty()) {
+                        JOptionPane.showMessageDialog(this, "프로젝트 참여자가 없어 저장할 수 없습니다."); return;
+                    }
+                    participationId = members.get(0).getId();
                 } else if (isAdmin) {
                     ProjectParticipation evaluator = (ProjectParticipation) evaluatorBox.getSelectedItem();
                     if (evaluator == null) { JOptionPane.showMessageDialog(this, "평가자를 선택하세요."); return; }
@@ -234,6 +240,19 @@ public class EvaluationAddDialog extends JDialog {
                     ps.setInt(2, participationId);
                     ps.setString(3, category);
                     ps.executeUpdate();
+                }
+
+                // PM·PARTNER: 평가자와 대상이 동일인인지 검사
+                if (type == Type.PM || type == Type.PARTNER) {
+                    ProjectParticipation target = (ProjectParticipation) targetBox.getSelectedItem();
+                    int evaluatorDevId = isAdmin
+                        ? ((ProjectParticipation) evaluatorBox.getSelectedItem()).getDeveloperId()
+                        : myParticipation.getDeveloperId();
+                    if (target != null && evaluatorDevId == target.getDeveloperId()) {
+                        JOptionPane.showMessageDialog(this, "자기 자신에게는 평가를 남길 수 없습니다.");
+                        conn.rollback();
+                        return;
+                    }
                 }
 
                 // 서브테이블 삽입
@@ -284,6 +303,17 @@ public class EvaluationAddDialog extends JDialog {
         } catch (Exception ex) {
             JOptionPane.showMessageDialog(this, "저장 오류: " + ex.getMessage(), "오류", JOptionPane.ERROR_MESSAGE);
         }
+    }
+
+    private String fetchProjectName() {
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement("SELECT project_name FROM project WHERE id=?")) {
+            ps.setInt(1, projectId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) return rs.getString(1);
+            }
+        } catch (Exception ignored) {}
+        return "(프로젝트 정보 없음)";
     }
 
     private String fetchCustomerName() {

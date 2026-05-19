@@ -42,5 +42,5 @@ public class ProjectParticipation {
     public void setEndDate(String endDate) { this.endDate = endDate; }
 
     @Override
-    public String toString() { return id + " - " + projectName + " (" + developerName + ")"; }
+    public String toString() { return developerName != null ? developerName : ""; }
 }

@@ -6,6 +6,7 @@ import com.example.dao.SeminarParticipationDAO;
 import com.example.model.Employee;
 import com.example.model.Seminar;
 import com.example.model.SeminarParticipation;
+import com.example.util.ComboAutoComplete;
 
 import javax.swing.*;
 import java.awt.*;
@@ -22,6 +23,10 @@ public class SeminarParticipationDialog extends JDialog {
     private final boolean isEdit;
 
     public SeminarParticipationDialog(JFrame parent, SeminarParticipation sp, SeminarParticipationDAO dao) {
+        this(parent, sp, dao, -1);
+    }
+
+    public SeminarParticipationDialog(JFrame parent, SeminarParticipation sp, SeminarParticipationDAO dao, int preselectedSeminarId) {
         super(parent, sp == null ? "세미나 참여 추가" : "세미나 참여 수정", true);
         this.dao = dao;
         this.isEdit = sp != null;
@@ -44,11 +49,20 @@ public class SeminarParticipationDialog extends JDialog {
         lc.gridy = 1; fc.gridy = 1; form.add(new JLabel("세미나:"), lc); form.add(seminarBox, fc);
         lc.gridy = 2; fc.gridy = 2; form.add(new JLabel("직원:"), lc); form.add(employeeBox, fc);
 
+        // 컨텍스트에서 열린 경우 세미나 고정
+        int lockSeminarId = isEdit ? sp.getSeminarId() : preselectedSeminarId;
+        if (lockSeminarId != -1) {
+            for (int i = 0; i < seminarBox.getItemCount(); i++) {
+                if (seminarBox.getItemAt(i).getId() == lockSeminarId) { seminarBox.setSelectedIndex(i); break; }
+            }
+            seminarBox.setEnabled(false);
+        } else {
+            ComboAutoComplete.apply(seminarBox);
+        }
+        ComboAutoComplete.apply(employeeBox);
+
         if (isEdit) {
             idField.setText(String.valueOf(sp.getId()));
-            for (int i = 0; i < seminarBox.getItemCount(); i++) {
-                if (seminarBox.getItemAt(i).getId() == sp.getSeminarId()) { seminarBox.setSelectedIndex(i); break; }
-            }
             for (int i = 0; i < employeeBox.getItemCount(); i++) {
                 if (employeeBox.getItemAt(i).getId() == sp.getEmployeeId()) { employeeBox.setSelectedIndex(i); break; }
             }

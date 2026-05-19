@@ -62,9 +62,6 @@ public class LeavePanel extends JPanel {
 
         if (!isAdmin) {
             searchPanel.setVisible(false);
-            addBtn.setVisible(false);
-            editBtn.setVisible(false);
-            deleteBtn.setVisible(false);
         }
 
         searchBtn.addActionListener(e -> loadData());
@@ -78,7 +75,13 @@ public class LeavePanel extends JPanel {
         editBtn.addActionListener(e -> {
             int row = table.getSelectedRow();
             if (row < 0) { showInfo("수정할 휴가 기록을 선택하세요."); return; }
-            openDialog(currentList.get(row));
+            LeaveRecord lr = currentList.get(row);
+            if (!isAdmin && lr.getEndDate() != null
+                    && lr.getEndDate().compareTo(LocalDate.now().toString()) < 0) {
+                showInfo("이미 지난 휴가에 대한 수정은 관리자에게 문의해 주세요.");
+                return;
+            }
+            openDialog(lr);
         });
         deleteBtn.addActionListener(e -> deleteSelected());
 

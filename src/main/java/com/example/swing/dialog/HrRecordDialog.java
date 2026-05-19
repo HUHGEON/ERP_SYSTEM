@@ -5,6 +5,7 @@ import com.example.dao.HrRecordDAO;
 import com.example.model.Employee;
 import com.example.model.HrRecord;
 import com.example.model.Position;
+import com.example.util.ComboAutoComplete;
 
 import javax.swing.*;
 import java.awt.*;
@@ -39,6 +40,9 @@ public class HrRecordDialog extends JDialog {
         } catch (Exception ex) {
             JOptionPane.showMessageDialog(this, "직급 목록 로드 실패: " + ex.getMessage());
         }
+
+        ComboAutoComplete.apply(employeeBox);
+        ComboAutoComplete.apply(positionBox);
 
         JPanel form = new JPanel(new GridBagLayout());
         form.setBorder(BorderFactory.createEmptyBorder(15, 20, 10, 20));

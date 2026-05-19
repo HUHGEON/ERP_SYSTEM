@@ -7,6 +7,7 @@ import com.example.dao.ProjectParticipationDAO;
 import com.example.model.Developer;
 import com.example.model.PmEvaluation;
 import com.example.model.ProjectParticipation;
+import com.example.util.ComboAutoComplete;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
@@ -54,6 +55,8 @@ public class PmEvaluationDialog extends JDialog {
         } catch (Exception ex) {
             JOptionPane.showMessageDialog(this, "콤보 로드 실패: " + ex.getMessage());
         }
+        ComboAutoComplete.apply(participationBox);
+        ComboAutoComplete.apply(pmBox);
     }
 
     private void loadExisting() {

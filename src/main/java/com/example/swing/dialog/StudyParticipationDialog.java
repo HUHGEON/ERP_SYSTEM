@@ -6,6 +6,7 @@ import com.example.dao.StudyParticipationDAO;
 import com.example.model.Employee;
 import com.example.model.Study;
 import com.example.model.StudyParticipation;
+import com.example.util.ComboAutoComplete;
 
 import javax.swing.*;
 import java.awt.*;
@@ -22,6 +23,10 @@ public class StudyParticipationDialog extends JDialog {
     private final boolean isEdit;
 
     public StudyParticipationDialog(JFrame parent, StudyParticipation sp, StudyParticipationDAO dao) {
+        this(parent, sp, dao, -1);
+    }
+
+    public StudyParticipationDialog(JFrame parent, StudyParticipation sp, StudyParticipationDAO dao, int preselectedStudyId) {
         super(parent, sp == null ? "스터디 참여 추가" : "스터디 참여 수정", true);
         this.dao = dao;
         this.isEdit = sp != null;
@@ -44,11 +49,20 @@ public class StudyParticipationDialog extends JDialog {
         lc.gridy = 1; fc.gridy = 1; form.add(new JLabel("스터디:"), lc); form.add(studyBox, fc);
         lc.gridy = 2; fc.gridy = 2; form.add(new JLabel("직원:"), lc); form.add(employeeBox, fc);
 
+        // 컨텍스트에서 열린 경우 스터디 고정
+        int lockStudyId = isEdit ? sp.getStudyId() : preselectedStudyId;
+        if (lockStudyId != -1) {
+            for (int i = 0; i < studyBox.getItemCount(); i++) {
+                if (studyBox.getItemAt(i).getId() == lockStudyId) { studyBox.setSelectedIndex(i); break; }
+            }
+            studyBox.setEnabled(false);
+        } else {
+            ComboAutoComplete.apply(studyBox);
+        }
+        ComboAutoComplete.apply(employeeBox);
+
         if (isEdit) {
             idField.setText(String.valueOf(sp.getId()));
-            for (int i = 0; i < studyBox.getItemCount(); i++) {
-                if (studyBox.getItemAt(i).getId() == sp.getStudyId()) { studyBox.setSelectedIndex(i); break; }
-            }
             for (int i = 0; i < employeeBox.getItemCount(); i++) {
                 if (employeeBox.getItemAt(i).getId() == sp.getEmployeeId()) { employeeBox.setSelectedIndex(i); break; }
             }

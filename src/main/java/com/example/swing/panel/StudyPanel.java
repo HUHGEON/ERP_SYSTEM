@@ -193,9 +193,8 @@ public class StudyPanel extends JPanel {
         });
 
         addMemberBtn.addActionListener(e -> {
-            if (selectedStudyId < 0) { info("스터디를 먼저 선택하세요."); return; }
             JFrame frame = (JFrame) SwingUtilities.getWindowAncestor(this);
-            StudyParticipationDialog dialog = new StudyParticipationDialog(frame, null, spDAO);
+            StudyParticipationDialog dialog = new StudyParticipationDialog(frame, null, spDAO, selectedStudyId);
             dialog.setVisible(true);
             if (dialog.isSaved()) loadMembers();
         });
@@ -277,7 +276,7 @@ public class StudyPanel extends JPanel {
             )
         ));
         card.setAlignmentX(Component.LEFT_ALIGNMENT);
-        card.setMaximumSize(new Dimension(Integer.MAX_VALUE, Integer.MAX_VALUE));
+        card.setMaximumSize(new Dimension(Integer.MAX_VALUE, 50));
 
         JLabel dateLbl = new JLabel(h.getActivityDate() != null ? h.getActivityDate() : "");
         dateLbl.setFont(new Font("SansSerif", Font.BOLD, 10));
