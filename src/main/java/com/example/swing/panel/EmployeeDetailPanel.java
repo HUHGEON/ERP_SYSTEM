@@ -198,7 +198,7 @@ public class EmployeeDetailPanel extends JPanel {
         gradeLabel.setText(emp.getGrade());
         deptLabel.setText(emp.getDepartment());
         hireDateLabel.setText(emp.getHireDate() != null ? emp.getHireDate() : "-");
-        salaryLabel.setText(emp.getSalary() > 0 ? String.format("%,d원", emp.getSalary()) : "-");
+        salaryLabel.setText(emp.getSalary() > 0 ? (emp.getSalary() / 10000) + "만원" : "-");
 
         // 인사 기록 (가장 최근 승진일)
         try {

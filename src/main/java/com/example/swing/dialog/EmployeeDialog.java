@@ -10,6 +10,10 @@ import com.example.util.MaskingUtil;
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
+import javax.swing.text.AbstractDocument;
+import javax.swing.text.AttributeSet;
+import javax.swing.text.BadLocationException;
+import javax.swing.text.DocumentFilter;
 import java.awt.*;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
@@ -19,17 +23,18 @@ public class EmployeeDialog extends JDialog {
 
     private static final String[] DEPARTMENTS = {"개발자", "마케팅", "경영관리", "연구개발"};
 
-    private final JTextField idField        = new JTextField(10);
-    private final JTextField nameField      = new JTextField(15);
-    private final JLabel     positionLabel  = new JLabel("-");
-    private final JComboBox<String> deptBox = new JComboBox<>(DEPARTMENTS);
-    private final JTextField residentField = new JTextField(15);
-    private final JTextField educationField = new JTextField(20);
-    private final JTextField phoneField    = new JTextField(15);
-    private final JTextField emailField    = new JTextField(20);
-    private final JTextField hireDateField = new JTextField(12);
-    private final JLabel techLabel  = new JLabel("기술스택 (쉼표 구분):");
-    private final JTextField techField = new JTextField(20);
+    private final JTextField idField          = new JTextField(10);
+    private final JTextField nameField        = new JTextField(15);
+    private final JLabel     positionLabel    = new JLabel("-");
+    private final JComboBox<String> deptBox   = new JComboBox<>(DEPARTMENTS);
+    private final JTextField residentField    = new JTextField(15);
+    private final JTextField educationField   = new JTextField(20);
+    private final JTextField phoneField       = new JTextField(15);
+    private final JTextField emailLocalField  = new JTextField(10);
+    private final JTextField emailDomainField = new JTextField(12);
+    private final JTextField hireDateField    = new JTextField(12);
+    private final JLabel     techLabel        = new JLabel("기술스택 (쉼표 구분):");
+    private final JTextField techField        = new JTextField(20);
 
     private final EmployeeDAO dao;
     private final DeveloperDAO developerDAO = new DeveloperDAO();
@@ -42,7 +47,6 @@ public class EmployeeDialog extends JDialog {
         this.dao = dao;
         this.isEdit = emp != null;
 
-        // 직급 목록 로드
         try {
             allPositions = dao.getAllPositions();
         } catch (Exception ex) {
@@ -51,6 +55,19 @@ public class EmployeeDialog extends JDialog {
 
         positionLabel.setFont(positionLabel.getFont().deriveFont(Font.BOLD));
         positionLabel.setForeground(new Color(25, 50, 120));
+
+        // 전화번호 자동 포맷 필터 (010-XXXX-XXXX)
+        ((AbstractDocument) phoneField.getDocument()).setDocumentFilter(new PhoneFilter());
+
+        // 이메일 패널 ([local] @ [domain])
+        JPanel emailPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
+        emailPanel.setOpaque(false);
+        emailLocalField.setPreferredSize(new Dimension(110, emailLocalField.getPreferredSize().height));
+        emailDomainField.setPreferredSize(new Dimension(130, emailDomainField.getPreferredSize().height));
+        JLabel atLabel = new JLabel("  @  ");
+        emailPanel.add(emailLocalField);
+        emailPanel.add(atLabel);
+        emailPanel.add(emailDomainField);
 
         JPanel form = new JPanel(new GridBagLayout());
         form.setBorder(BorderFactory.createEmptyBorder(15, 20, 10, 20));
@@ -69,7 +86,7 @@ public class EmployeeDialog extends JDialog {
         addRow(form, lc, fc, 3, "주민번호:", residentField);
         addRow(form, lc, fc, 4, "학력:", educationField);
         addRow(form, lc, fc, 5, "전화번호:", phoneField);
-        addRow(form, lc, fc, 6, "이메일:", emailField);
+        addRow(form, lc, fc, 6, "이메일:", emailPanel);
         addRow(form, lc, fc, 7, "입사일 (YYYY-MM-DD):", hireDateField);
         lc.gridy = 8; fc.gridy = 8;
         form.add(techLabel, lc);
@@ -85,7 +102,9 @@ public class EmployeeDialog extends JDialog {
         if (!isEdit) {
             MaskingUtil.installResidentFilter(residentField);
             hireDateField.setText(LocalDate.now().toString());
+            try { idField.setText(String.valueOf(dao.nextId())); } catch (Exception e) { idField.setText("1"); }
         }
+
         if (isEdit) {
             idField.setText(String.valueOf(emp.getId()));
             nameField.setText(emp.getEmployeeName());
@@ -93,7 +112,15 @@ public class EmployeeDialog extends JDialog {
             residentField.setText(emp.getResidentNumber());
             educationField.setText(emp.getEducation());
             phoneField.setText(emp.getPhoneNumber() != null ? emp.getPhoneNumber() : "");
-            emailField.setText(emp.getEmail() != null ? emp.getEmail() : "");
+            // 이메일 split
+            String mail = emp.getEmail() != null ? emp.getEmail() : "";
+            int at = mail.indexOf('@');
+            if (at >= 0) {
+                emailLocalField.setText(mail.substring(0, at));
+                emailDomainField.setText(mail.substring(at + 1));
+            } else {
+                emailLocalField.setText(mail);
+            }
             hireDateField.setText(emp.getHireDate() != null ? emp.getHireDate() : "");
             if ("개발자".equals(emp.getDepartment())) {
                 try {
@@ -101,15 +128,13 @@ public class EmployeeDialog extends JDialog {
                     if (dev != null) techField.setText(dev.getTech());
                 } catch (Exception ignored) {}
             }
-        } else {
-            try { idField.setText(String.valueOf(dao.nextId())); } catch (Exception e) { idField.setText("1"); }
         }
 
         updateTechFieldState();
         deptBox.addActionListener(e -> updateTechFieldState());
 
         JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
-        JButton saveBtn = new JButton("저장");
+        JButton saveBtn   = new JButton("저장");
         JButton cancelBtn = new JButton("취소");
         btnPanel.add(saveBtn);
         btnPanel.add(cancelBtn);
@@ -166,21 +191,27 @@ public class EmployeeDialog extends JDialog {
     }
 
     private void save() {
-        String name     = nameField.getText().trim();
-        String resident = residentField.getText().trim();
+        String name      = nameField.getText().trim();
+        String resident  = residentField.getText().trim();
         String education = educationField.getText().trim();
-        String dept     = (String) deptBox.getSelectedItem();
-        String phone    = phoneField.getText().trim();
-        String email    = emailField.getText().trim();
-        String hireDate = hireDateField.getText().trim();
+        String dept      = (String) deptBox.getSelectedItem();
+        String phone     = phoneField.getText().trim();
+        String emailLocal  = emailLocalField.getText().trim();
+        String emailDomain = emailDomainField.getText().trim();
+        String hireDate  = hireDateField.getText().trim();
 
-        if (name.isEmpty())      { JOptionPane.showMessageDialog(this, "이름을 입력하세요."); return; }
-        if (resident.isEmpty())  { JOptionPane.showMessageDialog(this, "주민번호를 입력하세요."); return; }
-        if (education.isEmpty()) { JOptionPane.showMessageDialog(this, "학력을 입력하세요."); return; }
-        if (hireDate.isEmpty())  { JOptionPane.showMessageDialog(this, "입사일을 입력하세요."); return; }
+        if (name.isEmpty())        { JOptionPane.showMessageDialog(this, "이름을 입력하세요."); return; }
+        if (resident.isEmpty())    { JOptionPane.showMessageDialog(this, "주민번호를 입력하세요."); return; }
+        if (education.isEmpty())   { JOptionPane.showMessageDialog(this, "학력을 입력하세요."); return; }
+        if (hireDate.isEmpty())    { JOptionPane.showMessageDialog(this, "입사일을 입력하세요."); return; }
+        if (emailLocal.isEmpty() || emailDomain.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "이메일을 올바르게 입력하세요."); return;
+        }
 
         Position pos = calcPositionByHireDate(hireDate);
         if (pos == null) { JOptionPane.showMessageDialog(this, "입사일 형식이 올바르지 않습니다. (YYYY-MM-DD)"); return; }
+
+        String email = emailLocal + "@" + emailDomain;
 
         try {
             int id = Integer.parseInt(idField.getText().trim());
@@ -201,17 +232,13 @@ public class EmployeeDialog extends JDialog {
                 if ("개발자".equals(dept)) {
                     String tech = techField.getText().trim();
                     Developer existing = developerDAO.getById(id);
-                    if (existing == null) {
-                        developerDAO.insert(new Developer(id, name, tech));
-                    } else {
-                        developerDAO.update(new Developer(id, name, tech));
-                    }
+                    if (existing == null) developerDAO.insert(new Developer(id, name, tech));
+                    else                  developerDAO.update(new Developer(id, name, tech));
                 }
             } else {
                 dao.insert(emp);
                 if ("개발자".equals(dept)) {
-                    String tech = techField.getText().trim();
-                    developerDAO.insert(new Developer(id, name, tech));
+                    developerDAO.insert(new Developer(id, name, techField.getText().trim()));
                 }
             }
 
@@ -225,4 +252,41 @@ public class EmployeeDialog extends JDialog {
     }
 
     public boolean isSaved() { return saved; }
+
+    // 전화번호 자동 포맷 필터 (숫자만 허용, XXX-XXXX-XXXX)
+    private static class PhoneFilter extends DocumentFilter {
+        @Override
+        public void insertString(FilterBypass fb, int offset, String string, AttributeSet attr) throws BadLocationException {
+            String cur = fb.getDocument().getText(0, fb.getDocument().getLength());
+            String newText = cur.substring(0, offset) + string + cur.substring(offset);
+            applyFormatted(fb, newText);
+        }
+
+        @Override
+        public void replace(FilterBypass fb, int offset, int length, String text, AttributeSet attrs) throws BadLocationException {
+            String cur = fb.getDocument().getText(0, fb.getDocument().getLength());
+            String newText = cur.substring(0, offset) + (text == null ? "" : text) + cur.substring(offset + length);
+            applyFormatted(fb, newText);
+        }
+
+        @Override
+        public void remove(FilterBypass fb, int offset, int length) throws BadLocationException {
+            String cur = fb.getDocument().getText(0, fb.getDocument().getLength());
+            String newText = cur.substring(0, offset) + cur.substring(offset + length);
+            applyFormatted(fb, newText);
+        }
+
+        private void applyFormatted(FilterBypass fb, String raw) throws BadLocationException {
+            String digits = raw.replaceAll("[^0-9]", "");
+            if (digits.length() > 11) digits = digits.substring(0, 11);
+            String formatted = format(digits);
+            super.replace(fb, 0, fb.getDocument().getLength(), formatted, null);
+        }
+
+        private String format(String digits) {
+            if (digits.length() <= 3) return digits;
+            if (digits.length() <= 7) return digits.substring(0, 3) + "-" + digits.substring(3);
+            return digits.substring(0, 3) + "-" + digits.substring(3, 7) + "-" + digits.substring(7);
+        }
+    }
 }

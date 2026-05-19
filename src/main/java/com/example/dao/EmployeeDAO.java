@@ -49,6 +49,7 @@ public class EmployeeDAO {
             params.add(department);
         }
 
+        sql.append(" ORDER BY e.id");
         List<Employee> list = new ArrayList<>();
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql.toString())) {
