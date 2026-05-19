@@ -24,6 +24,7 @@ public class LeaveDAO {
             sql.append(" AND lr.leave_type = ?");
             params.add(leaveType);
         }
+        sql.append(" ORDER BY lr.id");
 
         List<LeaveRecord> list = new ArrayList<>();
         try (Connection conn = DatabaseConnection.getConnection();

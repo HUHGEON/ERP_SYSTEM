@@ -25,6 +25,7 @@ public class ProjectDAO {
         } else if ("완료".equals(status)) {
             sql.append(" AND p.end_date IS NOT NULL");
         }
+        sql.append(" ORDER BY p.id");
 
         List<Project> list = new ArrayList<>();
         try (Connection conn = DatabaseConnection.getConnection();
