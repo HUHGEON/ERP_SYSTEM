@@ -49,7 +49,7 @@ public class EvaluationAddDialog extends JDialog {
     /** 고객/PM/파트너 평가 대상 선택 */
     private JComboBox<ProjectParticipation> targetBox;
     private JComboBox<String> categoryBox;
-    private JSpinner rateSpinner;
+    private JTextField rateField;
     private JTextArea contentArea;
 
     private boolean saved = false;
@@ -143,10 +143,25 @@ public class EvaluationAddDialog extends JDialog {
             addRow(form, row++, "카테고리:", categoryBox);
         }
 
-        // ── 평점 ──
-        SpinnerNumberModel spinModel = new SpinnerNumberModel(3.0, 1.0, 5.0, 0.5);
-        rateSpinner = new JSpinner(spinModel);
-        addRow(form, row++, "평점 (1.0~5.0):", rateSpinner);
+        // ── 평점 (1.0~5.0) ── 소수점 1자리까지만 입력, 저장 시 범위 검증
+        rateField = new JTextField(8);
+        rateField.setHorizontalAlignment(JTextField.LEFT);
+        ((javax.swing.text.AbstractDocument) rateField.getDocument()).setDocumentFilter(new javax.swing.text.DocumentFilter() {
+            @Override
+            public void insertString(javax.swing.text.DocumentFilter.FilterBypass fb, int off, String str, javax.swing.text.AttributeSet a) throws javax.swing.text.BadLocationException {
+                replace(fb, off, 0, str, a);
+            }
+            @Override
+            public void replace(javax.swing.text.DocumentFilter.FilterBypass fb, int off, int len, String str, javax.swing.text.AttributeSet a) throws javax.swing.text.BadLocationException {
+                if (str == null) return;
+                String cur = fb.getDocument().getText(0, fb.getDocument().getLength());
+                String next = cur.substring(0, off) + str + cur.substring(off + len);
+                if (next.isEmpty() || next.matches("\\d{0,1}(\\.\\d?)?")) {
+                    fb.replace(off, len, str, a);
+                }
+            }
+        });
+        addRow(form, row++, "평점 (1.0~5.0):", rateField);
 
         // ── 내용 ──
         contentArea = new JTextArea(4, 30);
@@ -175,7 +190,17 @@ public class EvaluationAddDialog extends JDialog {
 
     private void save() {
         String category = (type == Type.PARTNER) ? (String) categoryBox.getSelectedItem() : "업무 수행";
-        double rate = (Double) rateSpinner.getValue();
+        String rateText = rateField.getText().trim();
+        double raw;
+        try {
+            raw = Double.parseDouble(rateText);
+        } catch (NumberFormatException ex) {
+            JOptionPane.showMessageDialog(this, "평점은 1.0~5.0 사이 숫자여야 합니다."); return;
+        }
+        if (raw < 1.0 || raw > 5.0) {
+            JOptionPane.showMessageDialog(this, "평점은 1.0~5.0 사이여야 합니다."); return;
+        }
+        double rate = Math.floor(raw * 10) / 10.0;
         String content = contentArea.getText().trim();
 
         if (content.isEmpty()) {

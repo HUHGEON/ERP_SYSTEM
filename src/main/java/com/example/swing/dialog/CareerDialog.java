@@ -7,6 +7,8 @@ import com.example.model.Developer;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.FocusAdapter;
+import java.awt.event.FocusEvent;
 import java.util.List;
 
 public class CareerDialog extends JDialog {
@@ -63,10 +65,28 @@ public class CareerDialog extends JDialog {
         add(form, BorderLayout.CENTER);
         add(btnPanel, BorderLayout.SOUTH);
 
+        endField.addFocusListener(new FocusAdapter() {
+            @Override public void focusLost(FocusEvent e) { validateDates(); }
+        });
+        startField.addFocusListener(new FocusAdapter() {
+            @Override public void focusLost(FocusEvent e) { validateDates(); }
+        });
+
         saveBtn.addActionListener(e -> save());
         cancelBtn.addActionListener(e -> dispose());
         getRootPane().setDefaultButton(saveBtn);
         pack(); setResizable(false); setLocationRelativeTo(parent);
+    }
+
+    private boolean validateDates() {
+        String start = startField.getText().trim();
+        String end = endField.getText().trim();
+        if (!start.isEmpty() && !end.isEmpty() && end.compareTo(start) < 0) {
+            endField.setBackground(new Color(255, 200, 200));
+            return false;
+        }
+        endField.setBackground(UIManager.getColor("TextField.background"));
+        return true;
     }
 
     private void save() {
@@ -76,6 +96,10 @@ public class CareerDialog extends JDialog {
         if (company.isEmpty()) { JOptionPane.showMessageDialog(this, "회사명을 입력하세요."); return; }
         if (start.isEmpty()) { JOptionPane.showMessageDialog(this, "입사일을 입력하세요."); return; }
         if (end.isEmpty()) { JOptionPane.showMessageDialog(this, "퇴사일을 입력하세요."); return; }
+        if (!validateDates()) {
+            JOptionPane.showMessageDialog(this, "퇴사일이 입사일보다 이전일 수 없습니다.", "날짜 오류", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
         if (developerBox.getSelectedItem() == null) { JOptionPane.showMessageDialog(this, "개발자를 선택하세요."); return; }
         try {
             int id = Integer.parseInt(idField.getText().trim());
