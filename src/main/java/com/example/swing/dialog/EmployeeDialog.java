@@ -2,33 +2,34 @@ package com.example.swing.dialog;
 
 import com.example.dao.DeveloperDAO;
 import com.example.dao.EmployeeDAO;
-import com.example.dao.HrRecordDAO;
 import com.example.model.Developer;
 import com.example.model.Employee;
-import com.example.model.HrRecord;
+import com.example.model.Position;
 import com.example.util.MaskingUtil;
 
 import javax.swing.*;
 import java.awt.*;
 import java.time.LocalDate;
+import java.util.List;
 
 public class EmployeeDialog extends JDialog {
 
-    private static final String[] GRADES = {"사원", "대리", "과장", "부장", "이사"};
     private static final String[] DEPARTMENTS = {"개발자", "마케팅", "경영관리", "연구개발"};
 
-    private final JTextField idField = new JTextField(10);
-    private final JTextField nameField = new JTextField(15);
-    private final JComboBox<String> gradeBox = new JComboBox<>(GRADES);
+    private final JTextField idField       = new JTextField(10);
+    private final JTextField nameField     = new JTextField(15);
+    private final JComboBox<Position> positionBox = new JComboBox<>();
     private final JComboBox<String> deptBox = new JComboBox<>(DEPARTMENTS);
     private final JTextField residentField = new JTextField(15);
     private final JTextField educationField = new JTextField(20);
-    private final JLabel techLabel = new JLabel("기술스택 (쉼표 구분):");
+    private final JTextField phoneField    = new JTextField(15);
+    private final JTextField emailField    = new JTextField(20);
+    private final JTextField hireDateField = new JTextField(12);
+    private final JLabel techLabel  = new JLabel("기술스택 (쉼표 구분):");
     private final JTextField techField = new JTextField(20);
 
     private final EmployeeDAO dao;
     private final DeveloperDAO developerDAO = new DeveloperDAO();
-    private final HrRecordDAO hrRecordDAO = new HrRecordDAO();
     private boolean saved = false;
     private final boolean isEdit;
 
@@ -36,6 +37,14 @@ public class EmployeeDialog extends JDialog {
         super(parent, emp == null ? "직원 추가" : "직원 수정", true);
         this.dao = dao;
         this.isEdit = emp != null;
+
+        // 직급 목록 로드
+        try {
+            List<Position> positions = dao.getAllPositions();
+            for (Position p : positions) positionBox.addItem(p);
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(this, "직급 목록 로드 실패: " + ex.getMessage());
+        }
 
         JPanel form = new JPanel(new GridBagLayout());
         form.setBorder(BorderFactory.createEmptyBorder(15, 20, 10, 20));
@@ -49,26 +58,37 @@ public class EmployeeDialog extends JDialog {
         fc.gridwidth = GridBagConstraints.REMAINDER;
 
         addRow(form, lc, fc, 0, "이름:", nameField);
-        addRow(form, lc, fc, 1, "직급:", gradeBox);
+        addRow(form, lc, fc, 1, "직급:", positionBox);
         addRow(form, lc, fc, 2, "부서:", deptBox);
         addRow(form, lc, fc, 3, "주민번호:", residentField);
         addRow(form, lc, fc, 4, "학력:", educationField);
-        lc.gridy = 5;
-        fc.gridy = 5;
+        addRow(form, lc, fc, 5, "전화번호:", phoneField);
+        addRow(form, lc, fc, 6, "이메일:", emailField);
+        addRow(form, lc, fc, 7, "입사일 (YYYY-MM-DD):", hireDateField);
+        lc.gridy = 8; fc.gridy = 8;
         form.add(techLabel, lc);
         form.add(techField, fc);
 
         idField.setEditable(false);
         if (!isEdit) {
             MaskingUtil.installResidentFilter(residentField);
+            hireDateField.setText(LocalDate.now().toString());
         }
         if (isEdit) {
             idField.setText(String.valueOf(emp.getId()));
             nameField.setText(emp.getEmployeeName());
-            gradeBox.setSelectedItem(emp.getGrade());
+            // 직급 선택
+            for (int i = 0; i < positionBox.getItemCount(); i++) {
+                if (positionBox.getItemAt(i).getId() == emp.getPositionId()) {
+                    positionBox.setSelectedIndex(i); break;
+                }
+            }
             deptBox.setSelectedItem(emp.getDepartment());
             residentField.setText(emp.getResidentNumber());
             educationField.setText(emp.getEducation());
+            phoneField.setText(emp.getPhoneNumber() != null ? emp.getPhoneNumber() : "");
+            emailField.setText(emp.getEmail() != null ? emp.getEmail() : "");
+            hireDateField.setText(emp.getHireDate() != null ? emp.getHireDate() : "");
             if ("개발자".equals(emp.getDepartment())) {
                 try {
                     Developer dev = developerDAO.getById(emp.getId());
@@ -117,19 +137,34 @@ public class EmployeeDialog extends JDialog {
     }
 
     private void save() {
-        String name = nameField.getText().trim();
+        String name     = nameField.getText().trim();
         String resident = residentField.getText().trim();
         String education = educationField.getText().trim();
-        String dept = (String) deptBox.getSelectedItem();
+        String dept     = (String) deptBox.getSelectedItem();
+        String phone    = phoneField.getText().trim();
+        String email    = emailField.getText().trim();
+        String hireDate = hireDateField.getText().trim();
 
-        if (name.isEmpty()) { JOptionPane.showMessageDialog(this, "이름을 입력하세요."); return; }
-        if (resident.isEmpty()) { JOptionPane.showMessageDialog(this, "주민번호를 입력하세요."); return; }
+        if (name.isEmpty())      { JOptionPane.showMessageDialog(this, "이름을 입력하세요."); return; }
+        if (resident.isEmpty())  { JOptionPane.showMessageDialog(this, "주민번호를 입력하세요."); return; }
         if (education.isEmpty()) { JOptionPane.showMessageDialog(this, "학력을 입력하세요."); return; }
+        if (hireDate.isEmpty())  { JOptionPane.showMessageDialog(this, "입사일을 입력하세요."); return; }
+        if (positionBox.getSelectedItem() == null) { JOptionPane.showMessageDialog(this, "직급을 선택하세요."); return; }
 
         try {
             int id = Integer.parseInt(idField.getText().trim());
-            Employee emp = new Employee(id, name,
-                (String) gradeBox.getSelectedItem(), resident, education, dept);
+            Position pos = (Position) positionBox.getSelectedItem();
+
+            Employee emp = new Employee();
+            emp.setId(id);
+            emp.setPositionId(pos.getId());
+            emp.setEmployeeName(name);
+            emp.setResidentNumber(resident);
+            emp.setEducation(education);
+            emp.setDepartment(dept);
+            emp.setPhoneNumber(phone);
+            emp.setEmail(email);
+            emp.setHireDate(hireDate);
 
             if (isEdit) {
                 dao.update(emp);
@@ -137,21 +172,13 @@ public class EmployeeDialog extends JDialog {
                     String tech = techField.getText().trim();
                     Developer existing = developerDAO.getById(id);
                     if (existing == null) {
-                        // 부서가 개발자로 변경된 경우 Developer 자동 등록
                         developerDAO.insert(new Developer(id, name, tech));
                     } else {
-                        // 기존 개발자의 기술스택 업데이트
                         developerDAO.update(new Developer(id, name, tech));
                     }
                 }
             } else {
                 dao.insert(emp);
-
-                // 입사일(HrRecord) 자동 생성
-                String today = LocalDate.now().toString();
-                hrRecordDAO.insert(new HrRecord(hrRecordDAO.nextId(), id, name, today, null));
-
-                // 부서가 개발자이면 Developer 자동 등록
                 if ("개발자".equals(dept)) {
                     String tech = techField.getText().trim();
                     developerDAO.insert(new Developer(id, name, tech));

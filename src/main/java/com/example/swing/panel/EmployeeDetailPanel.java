@@ -24,12 +24,13 @@ public class EmployeeDetailPanel extends JPanel {
     private final StudyParticipationDAO studyDAO = new StudyParticipationDAO();
 
     // 헤더 라벨
-    private final JLabel nameLabel = new JLabel();
-    private final JLabel gradeLabel = new JLabel();
-    private final JLabel deptLabel = new JLabel();
-    private final JLabel hireDateLabel = new JLabel();
+    private final JLabel nameLabel      = new JLabel();
+    private final JLabel gradeLabel     = new JLabel();
+    private final JLabel deptLabel      = new JLabel();
+    private final JLabel hireDateLabel  = new JLabel();
     private final JLabel promotionLabel = new JLabel();
-    private final JLabel techLabel = new JLabel();
+    private final JLabel salaryLabel    = new JLabel();
+    private final JLabel techLabel      = new JLabel();
     private final JPanel techRow;
 
     private final JLabel permissionLabel = new JLabel();
@@ -92,6 +93,9 @@ public class EmployeeDetailPanel extends JPanel {
         addHeaderCell(headerPanel, gc, 6, 0, "입사일", hireDateLabel, new Color(34, 139, 34));
         addHeaderCell(headerPanel, gc, 8, 0, "승진일", promotionLabel, new Color(34, 139, 34));
 
+        // 두 번째 줄 앞: 연봉
+        addHeaderCell(headerPanel, gc, 0, 1, "연봉", salaryLabel, new Color(160, 60, 180));
+
         // 두 번째 줄: 기술스택 (개발자만 표시)
         techRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 4, 0));
         techRow.setBackground(new Color(245, 248, 255));
@@ -103,12 +107,12 @@ public class EmployeeDetailPanel extends JPanel {
         techRow.add(techKey);
         techRow.add(techLabel);
 
-        gc.gridx = 0; gc.gridy = 1;
+        gc.gridx = 0; gc.gridy = 2;
         gc.gridwidth = 10;
         gc.fill = GridBagConstraints.HORIZONTAL;
         headerPanel.add(techRow, gc);
 
-        // 세 번째 줄: 권한단계 (경영관리만 표시)
+        // 네 번째 줄: 권한단계 (경영관리만 표시)
         permissionRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 4, 0));
         permissionRow.setBackground(new Color(245, 248, 255));
         JLabel permKey = new JLabel("권한단계:");
@@ -119,7 +123,7 @@ public class EmployeeDetailPanel extends JPanel {
         permissionRow.add(permKey);
         permissionRow.add(permissionLabel);
 
-        gc.gridy = 2;
+        gc.gridy = 3;
         headerPanel.add(permissionRow, gc);
         gc.gridwidth = 1;
         gc.fill = GridBagConstraints.NONE;
@@ -193,14 +197,14 @@ public class EmployeeDetailPanel extends JPanel {
         nameLabel.setText(emp.getEmployeeName());
         gradeLabel.setText(emp.getGrade());
         deptLabel.setText(emp.getDepartment());
+        hireDateLabel.setText(emp.getHireDate() != null ? emp.getHireDate() : "-");
+        salaryLabel.setText(emp.getSalary() > 0 ? String.format("%,d원", emp.getSalary()) : "-");
 
-        // 인사 기록 (입사일, 승진일)
+        // 인사 기록 (가장 최근 승진일)
         try {
             HrRecord hr = hrRecordDAO.getByEmployeeId(emp.getId());
-            hireDateLabel.setText(hr != null && hr.getEmploymentData() != null ? hr.getEmploymentData() : "-");
             promotionLabel.setText(hr != null && hr.getPromotionDate() != null ? hr.getPromotionDate() : "-");
         } catch (Exception e) {
-            hireDateLabel.setText("-");
             promotionLabel.setText("-");
         }
 

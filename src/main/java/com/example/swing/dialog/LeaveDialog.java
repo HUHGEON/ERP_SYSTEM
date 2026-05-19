@@ -12,13 +12,14 @@ import java.util.List;
 
 public class LeaveDialog extends JDialog {
 
-    private static final String[] LEAVE_TYPES = {"연차", "병가", "경조사", "무급휴가"};
+    private static final String[] LEAVE_TYPES = {"연가", "공가"};
 
     private final JTextField idField = new JTextField(10);
     private final JComboBox<Employee> employeeBox = new JComboBox<>();
     private final JComboBox<String> leaveTypeBox = new JComboBox<>(LEAVE_TYPES);
     private final JTextField startDateField = new JTextField(12);
     private final JTextField endDateField = new JTextField(12);
+    private final JLabel remainingLabel = new JLabel();
 
     private final LeaveDAO dao;
     private boolean saved = false;
@@ -36,6 +37,9 @@ public class LeaveDialog extends JDialog {
             JOptionPane.showMessageDialog(this, "직원 목록 로드 실패: " + ex.getMessage());
         }
 
+        remainingLabel.setFont(new Font("SansSerif", Font.BOLD, 12));
+        remainingLabel.setForeground(new Color(34, 120, 34));
+
         JPanel form = new JPanel(new GridBagLayout());
         form.setBorder(BorderFactory.createEmptyBorder(15, 20, 10, 20));
         GridBagConstraints lc = new GridBagConstraints();
@@ -49,8 +53,9 @@ public class LeaveDialog extends JDialog {
 
         lc.gridy = 1; fc.gridy = 1; form.add(new JLabel("직원:"), lc); form.add(employeeBox, fc);
         lc.gridy = 2; fc.gridy = 2; form.add(new JLabel("휴가 종류:"), lc); form.add(leaveTypeBox, fc);
-        lc.gridy = 3; fc.gridy = 3; form.add(new JLabel("시작일 (YYYY-MM-DD):"), lc); form.add(startDateField, fc);
-        lc.gridy = 4; fc.gridy = 4; form.add(new JLabel("종료일 (YYYY-MM-DD):"), lc); form.add(endDateField, fc);
+        lc.gridy = 3; fc.gridy = 3; form.add(new JLabel(""), lc); form.add(remainingLabel, fc);
+        lc.gridy = 4; fc.gridy = 4; form.add(new JLabel("시작일 (YYYY-MM-DD):"), lc); form.add(startDateField, fc);
+        lc.gridy = 5; fc.gridy = 5; form.add(new JLabel("종료일 (YYYY-MM-DD):"), lc); form.add(endDateField, fc);
 
         idField.setEditable(false);
         if (isEdit) {
@@ -67,6 +72,10 @@ public class LeaveDialog extends JDialog {
         } else {
             try { idField.setText(String.valueOf(dao.nextId())); } catch (Exception e) { idField.setText("1"); }
         }
+
+        updateRemainingLabel();
+        employeeBox.addActionListener(e -> updateRemainingLabel());
+        leaveTypeBox.addActionListener(e -> updateRemainingLabel());
 
         JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
         JButton saveBtn = new JButton("저장");
@@ -92,6 +101,21 @@ public class LeaveDialog extends JDialog {
         pack();
         setResizable(false);
         setLocationRelativeTo(parent);
+    }
+
+    private void updateRemainingLabel() {
+        boolean isYeonga = "연가".equals(leaveTypeBox.getSelectedItem());
+        if (!isYeonga || employeeBox.getSelectedItem() == null) {
+            remainingLabel.setText("");
+            return;
+        }
+        try {
+            Employee emp = (Employee) employeeBox.getSelectedItem();
+            int remaining = dao.getRemainingLeaveDays(emp.getId());
+            remainingLabel.setText("잔여 연차: " + remaining + "일");
+        } catch (Exception ex) {
+            remainingLabel.setText("잔여 연차 조회 실패");
+        }
     }
 
     private boolean validateDates() {
