@@ -10,6 +10,8 @@ import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -30,6 +32,7 @@ public class EmployeeDetailPanel extends JPanel {
     private final JLabel hireDateLabel  = new JLabel();
     private final JLabel promotionLabel      = new JLabel();
     private final JLabel remainingLeaveLabel = new JLabel();
+    private final JLabel usedLeaveLabel      = new JLabel();
     private final JLabel techLabel           = new JLabel();
     private final JPanel techRow;
 
@@ -46,7 +49,7 @@ public class EmployeeDetailPanel extends JPanel {
         @Override public boolean isCellEditable(int r, int c) { return false; }
     };
     private final DefaultTableModel leaveModel = new DefaultTableModel(
-        new String[]{"휴가 유형", "시작일", "종료일"}, 0) {
+        new String[]{"휴가 유형", "시작일", "종료일", "휴가일수"}, 0) {
         @Override public boolean isCellEditable(int r, int c) { return false; }
     };
     private final DefaultTableModel studyModel = new DefaultTableModel(
@@ -66,6 +69,8 @@ public class EmployeeDetailPanel extends JPanel {
     private final JTable projectTable;
     private final JTable leaveTable;
     private final JTable studyTable;
+
+    private Employee currentEmployee;
 
     public EmployeeDetailPanel() {
         setLayout(new BorderLayout(0, 4));
@@ -93,8 +98,9 @@ public class EmployeeDetailPanel extends JPanel {
         addHeaderCell(headerPanel, gc, 6, 0, "입사일", hireDateLabel, new Color(34, 139, 34));
         addHeaderCell(headerPanel, gc, 8, 0, "승진일", promotionLabel, new Color(34, 139, 34));
 
-        // 두 번째 줄 앞: 잔여연차
+        // 두 번째 줄: 잔여연차 | 사용연차
         addHeaderCell(headerPanel, gc, 0, 1, "잔여연차", remainingLeaveLabel, new Color(160, 60, 180));
+        addHeaderCell(headerPanel, gc, 2, 1, "사용연차", usedLeaveLabel,      new Color(200, 80, 60));
 
         // 두 번째 줄: 기술스택 (개발자만 표시)
         techRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 4, 0));
@@ -140,12 +146,18 @@ public class EmployeeDetailPanel extends JPanel {
         projectTabIndex = 1;
 
         // 더블클릭으로 해당 페이지 이동 + 항목 선택
-        attachDoubleClickNav(projectTable, projectIds, "프로젝트", (mf, id) ->
-            ((ProjectPanel) mf.getContentPanel("프로젝트")).selectProjectById(id));
-        attachDoubleClickNav(leaveTable, leaveIds, "휴가기록", (mf, id) ->
-            ((LeavePanel) mf.getContentPanel("휴가기록")).selectLeaveById(id));
-        attachDoubleClickNav(studyTable, studyIds, "스터디", (mf, id) ->
-            ((StudyPanel) mf.getContentPanel("스터디")).selectStudyById(id));
+        attachDoubleClickNav(projectTable, projectIds, "프로젝트", (mf, id, row) -> {
+            String projName = (String) projectModel.getValueAt(row, 0);
+            ((ProjectPanel) mf.getContentPanel("프로젝트")).filterByProjectName(projName, id);
+        });
+        attachDoubleClickNav(leaveTable, leaveIds, "휴가기록", (mf, id, row) -> {
+            String empName = currentEmployee != null ? currentEmployee.getEmployeeName() : "";
+            ((LeavePanel) mf.getContentPanel("휴가기록")).filterByEmployee(empName);
+        });
+        attachDoubleClickNav(studyTable, studyIds, "스터디", (mf, id, row) -> {
+            String studyName = (String) studyModel.getValueAt(row, 0);
+            ((StudyPanel) mf.getContentPanel("스터디")).filterByStudyName(studyName, id);
+        });
 
         add(headerPanel, BorderLayout.NORTH);
         add(tabs, BorderLayout.CENTER);
@@ -173,7 +185,7 @@ public class EmployeeDetailPanel extends JPanel {
     }
 
     @FunctionalInterface
-    private interface NavAction { void run(MainFrame mf, int id); }
+    private interface NavAction { void run(MainFrame mf, int id, int row); }
 
     private void attachDoubleClickNav(JTable table, List<Integer> idList, String cardKey, NavAction action) {
         table.addMouseListener(new MouseAdapter() {
@@ -186,25 +198,29 @@ public class EmployeeDetailPanel extends JPanel {
                 if (!(w instanceof MainFrame)) return;
                 MainFrame mf = (MainFrame) w;
                 mf.navigateTo(cardKey);
-                try { action.run(mf, id); }
+                try { action.run(mf, id, row); }
                 catch (Exception ex) { /* 대상 패널 미초기화 등은 무시 */ }
             }
         });
     }
 
     public void loadEmployee(Employee emp) {
+        currentEmployee = emp;
         // 기본 정보
         nameLabel.setText(emp.getEmployeeName());
         gradeLabel.setText(emp.getGrade());
         deptLabel.setText(emp.getDepartment());
         hireDateLabel.setText(emp.getHireDate() != null ? emp.getHireDate() : "-");
 
-        // 잔여연차
+        // 잔여연차 / 사용연차
         try {
             int remaining = leaveDAO.getRemainingLeaveDays(emp.getId());
+            int total = leaveDAO.getTotalLeaveDays(emp.getId());
             remainingLeaveLabel.setText(remaining + "일");
+            usedLeaveLabel.setText((total - remaining) + "일");
         } catch (Exception e) {
             remainingLeaveLabel.setText("-");
+            usedLeaveLabel.setText("-");
         }
 
         // 인사 기록 (가장 최근 승진일)
@@ -265,7 +281,7 @@ public class EmployeeDetailPanel extends JPanel {
         leaveIds.clear();
         try {
             for (LeaveRecord lr : leaveDAO.getByEmployeeId(emp.getId())) {
-                leaveModel.addRow(new Object[]{lr.getLeaveType(), lr.getStartDate(), lr.getEndDate()});
+                leaveModel.addRow(new Object[]{lr.getLeaveType(), lr.getStartDate(), lr.getEndDate(), calcDays(lr.getStartDate(), lr.getEndDate())});
                 leaveIds.add(lr.getId());
             }
         } catch (Exception ignored) {}
@@ -279,5 +295,15 @@ public class EmployeeDetailPanel extends JPanel {
                 studyIds.add(sp.getStudyId());
             }
         } catch (Exception ignored) {}
+    }
+
+    private static String calcDays(String start, String end) {
+        if (start == null || end == null || start.isEmpty() || end.isEmpty()) return "-";
+        try {
+            long days = ChronoUnit.DAYS.between(LocalDate.parse(start), LocalDate.parse(end)) + 1;
+            return days + "일";
+        } catch (Exception e) {
+            return "-";
+        }
     }
 }

@@ -167,6 +167,8 @@ public class StudyPanel extends JPanel {
 
         // ── 이벤트 ───────────────────────────────────────────────
         searchBtn.addActionListener(e -> loadStudies());
+        nameField.addActionListener(e -> loadStudies());
+        categoryField.addActionListener(e -> loadStudies());
         resetBtn.addActionListener(e -> { nameField.setText(""); categoryField.setText(""); loadStudies(); });
 
         addStudyBtn.addActionListener(e -> openStudyDialog(null));
@@ -322,6 +324,14 @@ public class StudyPanel extends JPanel {
             try { spDAO.delete(sp.getId()); loadMembers(); }
             catch (Exception ex) { error("삭제 오류: " + ex.getMessage()); }
         }
+    }
+
+    /** 외부 호출: 스터디명으로 필터 후 해당 행 선택. */
+    public void filterByStudyName(String studyName, int studyId) {
+        nameField.setText(studyName);
+        categoryField.setText("");
+        loadStudies();
+        selectRow(studyId);
     }
 
     /** 외부 호출: 스터디 id로 행 선택. 필터/권한으로 안 보이면 필터 초기화 후 재시도. */
