@@ -2,15 +2,21 @@ package com.example.swing.panel;
 
 import com.example.dao.OutputDAO;
 import com.example.dao.ProjectDAO;
+import com.example.dao.ProjectParticipationDAO;
 import com.example.model.Output;
 import com.example.model.Project;
+import com.example.model.ProjectParticipation;
 import com.example.swing.dialog.OutputDialog;
 import com.example.swing.dialog.ProjectDialog;
+import com.example.util.UserSession;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 public class ProjectPanel extends JPanel {
 
@@ -20,6 +26,10 @@ public class ProjectPanel extends JPanel {
 
     private final ProjectDAO projectDAO = new ProjectDAO();
     private final OutputDAO  outputDAO  = new OutputDAO();
+    private final ProjectParticipationDAO participationDAO = new ProjectParticipationDAO();
+
+    private final boolean isAdmin = UserSession.getInstance().isAdmin();
+    private final int myId = UserSession.getInstance().getEmployeeId();
 
     private final DefaultTableModel projectModel = new DefaultTableModel(PROJ_COLS, 0) {
         @Override public boolean isCellEditable(int r, int c) { return false; }
@@ -97,6 +107,17 @@ public class ProjectPanel extends JPanel {
         split.setDividerSize(6);
         add(split, BorderLayout.CENTER);
 
+        // 비관리자는 검색/추가/수정/삭제 숨김 (본인 참여 프로젝트만 조회)
+        if (!isAdmin) {
+            searchPanel.setVisible(false);
+            addProjBtn.setVisible(false);
+            editProjBtn.setVisible(false);
+            deleteProjBtn.setVisible(false);
+            addOutBtn.setVisible(false);
+            editOutBtn.setVisible(false);
+            deleteOutBtn.setVisible(false);
+        }
+
         // ── 이벤트 ──
         searchBtn.addActionListener(e -> loadProjects());
         resetBtn.addActionListener(e -> { nameField.setText(""); statusBox.setSelectedIndex(0); loadProjects(); });
@@ -138,6 +159,14 @@ public class ProjectPanel extends JPanel {
     private void loadProjects() {
         try {
             projectList = projectDAO.search(nameField.getText().trim(), (String) statusBox.getSelectedItem());
+            if (!isAdmin) {
+                Set<Integer> myProjectIds = participationDAO.getByDeveloperId(myId).stream()
+                    .map(ProjectParticipation::getProjectId)
+                    .collect(Collectors.toCollection(HashSet::new));
+                projectList = projectList.stream()
+                    .filter(p -> myProjectIds.contains(p.getId()))
+                    .collect(Collectors.toList());
+            }
             projectModel.setRowCount(0);
             for (Project p : projectList) {
                 projectModel.addRow(new Object[]{
@@ -195,6 +224,28 @@ public class ProjectPanel extends JPanel {
             try { outputDAO.delete(o.getId()); loadOutputs(); }
             catch (Exception ex) { error("삭제 오류: " + ex.getMessage()); }
         }
+    }
+
+    /** 외부에서 호출: 해당 프로젝트로 이동하여 행 선택. 필터에 가려져 있으면 필터 초기화 후 재시도. */
+    public void selectProjectById(int projectId) {
+        if (!selectRow(projectId)) {
+            nameField.setText("");
+            statusBox.setSelectedIndex(0);
+            loadProjects();
+            selectRow(projectId);
+        }
+    }
+
+    private boolean selectRow(int projectId) {
+        if (projectList == null) return false;
+        for (int i = 0; i < projectList.size(); i++) {
+            if (projectList.get(i).getId() == projectId) {
+                projectTable.setRowSelectionInterval(i, i);
+                projectTable.scrollRectToVisible(projectTable.getCellRect(i, 0, true));
+                return true;
+            }
+        }
+        return false;
     }
 
     private void info(String msg) { JOptionPane.showMessageDialog(this, msg); }

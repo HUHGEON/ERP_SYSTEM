@@ -324,6 +324,30 @@ public class StudyPanel extends JPanel {
         }
     }
 
+    /** 외부 호출: 스터디 id로 행 선택. 필터/권한으로 안 보이면 필터 초기화 후 재시도. */
+    public void selectStudyById(int studyId) {
+        if (!selectRow(studyId)) {
+            if (isAdmin) {
+                nameField.setText("");
+                categoryField.setText("");
+            }
+            loadStudies();
+            selectRow(studyId);
+        }
+    }
+
+    private boolean selectRow(int studyId) {
+        if (studyList == null) return false;
+        for (int i = 0; i < studyList.size(); i++) {
+            if (studyList.get(i).getId() == studyId) {
+                studyTable.setRowSelectionInterval(i, i);
+                studyTable.scrollRectToVisible(studyTable.getCellRect(i, 0, true));
+                return true;
+            }
+        }
+        return false;
+    }
+
     private void info(String msg)  { JOptionPane.showMessageDialog(this, msg); }
     private void error(String msg) { JOptionPane.showMessageDialog(this, msg, "오류", JOptionPane.ERROR_MESSAGE); }
 }
