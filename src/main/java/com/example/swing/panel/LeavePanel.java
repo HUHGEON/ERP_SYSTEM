@@ -12,7 +12,7 @@ import java.util.List;
 
 public class LeavePanel extends JPanel {
 
-    private static final String[] LEAVE_TYPES = {"", "연차", "병가", "경조사", "무급휴가"};
+    private static final String[] LEAVE_TYPES = {"", "연가", "공가"};
     private static final String[] COLUMNS = {"ID", "직원 이름", "휴가 종류", "시작일", "종료일"};
 
     private final boolean isAdmin = UserSession.getInstance().isAdmin();

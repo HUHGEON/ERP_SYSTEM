@@ -13,7 +13,7 @@ import java.util.List;
 
 public class HrRecordPanel extends JPanel {
 
-    private static final String[] COLUMNS = {"ID", "직원명", "입사일", "승진일"};
+    private static final String[] COLUMNS = {"ID", "직원명", "직급", "승진일"};
 
     private final boolean isAdmin = UserSession.getInstance().isAdmin();
     private final int myId = UserSession.getInstance().getEmployeeId();
@@ -78,7 +78,7 @@ public class HrRecordPanel extends JPanel {
             }
             tableModel.setRowCount(0);
             for (HrRecord h : currentList)
-                tableModel.addRow(new Object[]{h.getId(), h.getEmployeeName(), h.getEmploymentData(), h.getPromotionDate()});
+                tableModel.addRow(new Object[]{h.getId(), h.getEmployeeName(), h.getPositionName(), h.getPromotionDate()});
         } catch (Exception ex) { JOptionPane.showMessageDialog(this, "오류: " + ex.getMessage(), "DB 오류", JOptionPane.ERROR_MESSAGE); }
     }
 

@@ -119,4 +119,16 @@ public class LeaveDAO {
             ps.executeUpdate();
         }
     }
+
+    public int getRemainingLeaveDays(int employeeId) throws SQLException {
+        String sql = "SELECT remaining_days FROM employee_leave_status WHERE id = ?";
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, employeeId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) return rs.getInt("remaining_days");
+            }
+        }
+        return 0;
+    }
 }

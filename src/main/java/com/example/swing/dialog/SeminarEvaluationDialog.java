@@ -1,30 +1,31 @@
 package com.example.swing.dialog;
 
 import com.example.dao.EmployeeDAO;
-import com.example.dao.HrRecordDAO;
+import com.example.dao.SeminarEvaluationDAO;
 import com.example.model.Employee;
-import com.example.model.HrRecord;
-import com.example.model.Position;
+import com.example.model.SeminarEvaluation;
 
 import javax.swing.*;
 import java.awt.*;
 import java.util.List;
 
-public class HrRecordDialog extends JDialog {
+public class SeminarEvaluationDialog extends JDialog {
 
-    private final JTextField idField = new JTextField(10);
+    private final JTextField idField      = new JTextField(10);
     private final JComboBox<Employee> employeeBox = new JComboBox<>();
-    private final JComboBox<Position> positionBox = new JComboBox<>();
-    private final JTextField promotionField = new JTextField(12);
+    private final JTextField ratingField  = new JTextField(6);
+    private final JTextArea commentArea   = new JTextArea(4, 25);
 
-    private final HrRecordDAO dao;
+    private final SeminarEvaluationDAO dao;
+    private final int seminarId;
     private boolean saved = false;
     private final boolean isEdit;
 
-    public HrRecordDialog(JFrame parent, HrRecord record, HrRecordDAO dao) {
-        super(parent, record == null ? "인사기록 추가" : "인사기록 수정", true);
+    public SeminarEvaluationDialog(JFrame parent, SeminarEvaluation eval, int seminarId, SeminarEvaluationDAO dao) {
+        super(parent, eval == null ? "평가 추가" : "평가 수정", true);
         this.dao = dao;
-        this.isEdit = record != null;
+        this.seminarId = seminarId;
+        this.isEdit = eval != null;
 
         try {
             List<Employee> employees = new EmployeeDAO().search("", "", "");
@@ -33,12 +34,8 @@ public class HrRecordDialog extends JDialog {
             JOptionPane.showMessageDialog(this, "직원 목록 로드 실패: " + ex.getMessage());
         }
 
-        try {
-            List<Position> positions = new EmployeeDAO().getAllPositions();
-            for (Position p : positions) positionBox.addItem(p);
-        } catch (Exception ex) {
-            JOptionPane.showMessageDialog(this, "직급 목록 로드 실패: " + ex.getMessage());
-        }
+        commentArea.setLineWrap(true);
+        commentArea.setWrapStyleWord(true);
 
         JPanel form = new JPanel(new GridBagLayout());
         form.setBorder(BorderFactory.createEmptyBorder(15, 20, 10, 20));
@@ -46,18 +43,21 @@ public class HrRecordDialog extends JDialog {
 
         idField.setEditable(false);
         lc.gridy = 1; fc.gridy = 1; form.add(new JLabel("직원:"), lc); form.add(employeeBox, fc);
-        lc.gridy = 2; fc.gridy = 2; form.add(new JLabel("승진 직급:"), lc); form.add(positionBox, fc);
-        lc.gridy = 3; fc.gridy = 3; form.add(new JLabel("승진일 (YYYY-MM-DD):"), lc); form.add(promotionField, fc);
+        lc.gridy = 2; fc.gridy = 2; form.add(new JLabel("평점 (0.00~5.00):"), lc); form.add(ratingField, fc);
+
+        lc.gridy = 3; lc.anchor = GridBagConstraints.NORTHEAST;
+        fc.gridy = 3;
+        form.add(new JLabel("코멘트:"), lc);
+        form.add(new JScrollPane(commentArea), fc);
+        lc.anchor = GridBagConstraints.EAST;
 
         if (isEdit) {
-            idField.setText(String.valueOf(record.getId()));
+            idField.setText(String.valueOf(eval.getId()));
             for (int i = 0; i < employeeBox.getItemCount(); i++) {
-                if (employeeBox.getItemAt(i).getId() == record.getEmployeeId()) { employeeBox.setSelectedIndex(i); break; }
+                if (employeeBox.getItemAt(i).getId() == eval.getEmployeeId()) { employeeBox.setSelectedIndex(i); break; }
             }
-            for (int i = 0; i < positionBox.getItemCount(); i++) {
-                if (positionBox.getItemAt(i).getId() == record.getPositionId()) { positionBox.setSelectedIndex(i); break; }
-            }
-            promotionField.setText(record.getPromotionDate() != null ? record.getPromotionDate() : "");
+            ratingField.setText(String.valueOf(eval.getRating()));
+            commentArea.setText(eval.getComment() != null ? eval.getComment() : "");
         } else {
             try { idField.setText(String.valueOf(dao.nextId())); } catch (Exception e) { idField.setText("1"); }
         }
@@ -78,16 +78,23 @@ public class HrRecordDialog extends JDialog {
 
     private void save() {
         if (employeeBox.getSelectedItem() == null) { JOptionPane.showMessageDialog(this, "직원을 선택하세요."); return; }
-        if (positionBox.getSelectedItem() == null)  { JOptionPane.showMessageDialog(this, "직급을 선택하세요."); return; }
-        String promotion = promotionField.getText().trim();
-        if (promotion.isEmpty()) { JOptionPane.showMessageDialog(this, "승진일을 입력하세요."); return; }
+        String ratingStr = ratingField.getText().trim();
+        if (ratingStr.isEmpty()) { JOptionPane.showMessageDialog(this, "평점을 입력하세요."); return; }
+
+        double rating;
+        try {
+            rating = Double.parseDouble(ratingStr);
+            if (rating < 0 || rating > 5) { JOptionPane.showMessageDialog(this, "평점은 0.00~5.00 사이여야 합니다."); return; }
+        } catch (NumberFormatException ex) {
+            JOptionPane.showMessageDialog(this, "평점은 숫자로 입력하세요."); return;
+        }
 
         try {
             int id = Integer.parseInt(idField.getText().trim());
             Employee emp = (Employee) employeeBox.getSelectedItem();
-            Position pos = (Position) positionBox.getSelectedItem();
-            HrRecord h = new HrRecord(id, emp.getId(), emp.getEmployeeName(), pos.getId(), promotion);
-            if (isEdit) dao.update(h); else dao.insert(h);
+            SeminarEvaluation se = new SeminarEvaluation(id, seminarId, "", emp.getId(),
+                emp.getEmployeeName(), rating, commentArea.getText().trim());
+            if (isEdit) dao.update(se); else dao.insert(se);
             saved = true;
             dispose();
         } catch (Exception ex) {
