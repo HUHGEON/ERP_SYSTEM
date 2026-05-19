@@ -110,10 +110,12 @@ public class EmployeeDetailPanel extends JPanel {
         gc.gridwidth = 1;
         gc.fill = GridBagConstraints.NONE;
 
-        // 탭
+        // 탭 (프로젝트 탭도 생성자에서 미리 추가하여 MainFrame.styleAllTables가 헤더 스타일을 적용하도록 함)
         tabs.addTab("경력", new JScrollPane(makeTable(careerModel)));
+        tabs.addTab("프로젝트", new JScrollPane(makeTable(projectModel)));
         tabs.addTab("휴가", new JScrollPane(makeTable(leaveModel)));
         tabs.addTab("스터디", new JScrollPane(makeTable(studyModel)));
+        projectTabIndex = 1;
 
         add(headerPanel, BorderLayout.NORTH);
         add(tabs, BorderLayout.CENTER);
@@ -180,14 +182,8 @@ public class EmployeeDetailPanel extends JPanel {
             }
         }
 
-        // 프로젝트 투입 탭 (개발자만)
-        if (isDev && projectTabIndex == -1) {
-            projectTabIndex = 1;
-            tabs.insertTab("프로젝트", null, new JScrollPane(makeTable(projectModel)), null, projectTabIndex);
-        } else if (!isDev && projectTabIndex != -1) {
-            tabs.removeTabAt(projectTabIndex);
-            projectTabIndex = -1;
-        }
+        // 프로젝트 투입 탭 (개발자만 활성화)
+        tabs.setEnabledAt(projectTabIndex, isDev);
 
         // 경력
         careerModel.setRowCount(0);
@@ -198,8 +194,8 @@ public class EmployeeDetailPanel extends JPanel {
         } catch (Exception ignored) {}
 
         // 프로젝트 투입 (개발자만)
+        projectModel.setRowCount(0);
         if (isDev) {
-            projectModel.setRowCount(0);
             try {
                 for (ProjectParticipation pp : projectDAO.getByDeveloperId(emp.getId())) {
                     String end = (pp.getEndDate() != null && !pp.getEndDate().isEmpty()) ? pp.getEndDate() : "진행중";
