@@ -3,11 +3,14 @@ package com.example.swing.dialog;
 import com.example.dao.LeaveDAO;
 import com.example.model.Employee;
 import com.example.model.LeaveRecord;
+import com.example.util.ComboAutoComplete;
 
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.FocusAdapter;
 import java.awt.event.FocusEvent;
+import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 
 public class LeaveDialog extends JDialog {
@@ -36,6 +39,8 @@ public class LeaveDialog extends JDialog {
         } catch (Exception ex) {
             JOptionPane.showMessageDialog(this, "직원 목록 로드 실패: " + ex.getMessage());
         }
+
+        ComboAutoComplete.apply(employeeBox);
 
         remainingLabel.setFont(new Font("SansSerif", Font.BOLD, 12));
         remainingLabel.setForeground(new Color(34, 120, 34));
@@ -136,6 +141,10 @@ public class LeaveDialog extends JDialog {
         if (employeeBox.getSelectedItem() == null) { JOptionPane.showMessageDialog(this, "직원을 선택하세요."); return; }
         if (startDate.isEmpty()) { JOptionPane.showMessageDialog(this, "시작일을 입력하세요."); return; }
         if (endDate.isEmpty()) { JOptionPane.showMessageDialog(this, "종료일을 입력하세요."); return; }
+        if (!isEdit && startDate.compareTo(LocalDate.now().toString()) < 0) {
+            JOptionPane.showMessageDialog(this, "시작일은 오늘 이전으로 등록할 수 없습니다.", "날짜 오류", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
         if (!validateDates()) {
             JOptionPane.showMessageDialog(this, "종료일이 시작일보다 이전일 수 없습니다.", "날짜 오류", JOptionPane.ERROR_MESSAGE);
             return;
@@ -144,9 +153,25 @@ public class LeaveDialog extends JDialog {
         try {
             int id = Integer.parseInt(idField.getText().trim());
             Employee emp = (Employee) employeeBox.getSelectedItem();
+            String leaveType = (String) leaveTypeBox.getSelectedItem();
+
+            // 연가 신규 등록 시 잔여 연차 검증
+            if (!isEdit && "연가".equals(leaveType)) {
+                long requestedDays = ChronoUnit.DAYS.between(
+                        LocalDate.parse(startDate), LocalDate.parse(endDate)) + 1;
+                int remaining = dao.getRemainingLeaveDays(emp.getId());
+                if (remaining - requestedDays < 0) {
+                    JOptionPane.showMessageDialog(this,
+                        "잔여 연차가 부족합니다. (잔여: " + remaining + "일, 신청: " + requestedDays + "일)\n" +
+                        "마이너스 연차는 사용 불가합니다. 일수를 다시 입력하여 등록하세요.",
+                        "연차 부족", JOptionPane.WARNING_MESSAGE);
+                    return;
+                }
+            }
+
             LeaveRecord lr = new LeaveRecord(id, emp.getId(), emp.getEmployeeName(),
-                (String) leaveTypeBox.getSelectedItem(), startDate, endDate);
-            if (isEdit) dao.update(lr); else dao.insert(lr);
+                leaveType, startDate, endDate);
+            if (isEdit) dao.update(lr); else dao.insertOrMerge(lr);
             saved = true;
             dispose();
         } catch (NumberFormatException ex) {

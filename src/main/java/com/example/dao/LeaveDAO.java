@@ -100,6 +100,73 @@ public class LeaveDAO {
         }
     }
 
+    /**
+     * 겹치는 휴가가 있으면 시작일·종료일을 min/max로 병합(UPDATE), 없으면 신규 INSERT.
+     * 여러 개가 겹치면 가장 오래된 레코드 하나에 합치고 나머지는 삭제.
+     */
+    public void insertOrMerge(LeaveRecord lr) throws SQLException {
+        String findSql =
+            "SELECT id, start_date, end_date FROM leave_records " +
+            "WHERE employee_id = ? AND leave_type = ? " +
+            "AND start_date <= ? AND end_date >= ?";
+
+        List<Integer> ids = new ArrayList<>();
+        String mergedStart = lr.getStartDate();
+        String mergedEnd   = lr.getEndDate();
+
+        try (Connection conn = DatabaseConnection.getConnection()) {
+            conn.setAutoCommit(false);
+            try {
+                try (PreparedStatement ps = conn.prepareStatement(findSql)) {
+                    ps.setInt(1, lr.getEmployeeId());
+                    ps.setString(2, lr.getLeaveType());
+                    ps.setString(3, lr.getEndDate());
+                    ps.setString(4, lr.getStartDate());
+                    try (ResultSet rs = ps.executeQuery()) {
+                        while (rs.next()) {
+                            ids.add(rs.getInt("id"));
+                            String s = dateStr(rs, "start_date");
+                            String e = dateStr(rs, "end_date");
+                            if (s != null && s.compareTo(mergedStart) < 0) mergedStart = s;
+                            if (e != null && e.compareTo(mergedEnd)   > 0) mergedEnd   = e;
+                        }
+                    }
+                }
+
+                if (ids.isEmpty()) {
+                    try (PreparedStatement ps = conn.prepareStatement(
+                            "INSERT INTO leave_records(id,employee_id,leave_type,start_date,end_date) VALUES(?,?,?,?,?)")) {
+                        ps.setInt(1, lr.getId());
+                        ps.setInt(2, lr.getEmployeeId());
+                        ps.setString(3, lr.getLeaveType());
+                        ps.setString(4, mergedStart);
+                        ps.setString(5, mergedEnd);
+                        ps.executeUpdate();
+                    }
+                } else {
+                    try (PreparedStatement ps = conn.prepareStatement(
+                            "UPDATE leave_records SET start_date=?, end_date=? WHERE id=?")) {
+                        ps.setString(1, mergedStart);
+                        ps.setString(2, mergedEnd);
+                        ps.setInt(3, ids.get(0));
+                        ps.executeUpdate();
+                    }
+                    for (int i = 1; i < ids.size(); i++) {
+                        try (PreparedStatement ps = conn.prepareStatement(
+                                "DELETE FROM leave_records WHERE id=?")) {
+                            ps.setInt(1, ids.get(i));
+                            ps.executeUpdate();
+                        }
+                    }
+                }
+                conn.commit();
+            } catch (Exception ex) {
+                conn.rollback();
+                throw ex;
+            }
+        }
+    }
+
     public void update(LeaveRecord lr) throws SQLException {
         String sql = "UPDATE leave_records SET employee_id=?, leave_type=?, start_date=?, end_date=? WHERE id=?";
         try (Connection conn = DatabaseConnection.getConnection();

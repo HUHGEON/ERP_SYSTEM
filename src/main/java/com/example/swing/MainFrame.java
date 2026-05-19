@@ -42,8 +42,8 @@ public class MainFrame extends JFrame {
     public MainFrame() {
         setTitle("인사관리 시스템");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setSize(1300, 800);
         setMinimumSize(new Dimension(980, 640));
+        setExtendedState(JFrame.MAXIMIZED_BOTH);
         setLocationRelativeTo(null);
         setLayout(new BorderLayout());
 

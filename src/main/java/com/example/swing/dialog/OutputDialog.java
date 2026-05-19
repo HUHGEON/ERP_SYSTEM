@@ -4,6 +4,7 @@ import com.example.dao.OutputDAO;
 import com.example.dao.ProjectDAO;
 import com.example.model.Output;
 import com.example.model.Project;
+import com.example.util.ComboAutoComplete;
 
 import javax.swing.*;
 import java.awt.*;
@@ -33,6 +34,8 @@ public class OutputDialog extends JDialog {
             List<Project> projects = new ProjectDAO().search("", "");
             for (Project p : projects) projectBox.addItem(p);
         } catch (Exception ex) { JOptionPane.showMessageDialog(this, "프로젝트 목록 로드 실패: " + ex.getMessage()); }
+
+        ComboAutoComplete.apply(projectBox);
 
         JPanel form = new JPanel(new GridBagLayout());
         form.setBorder(BorderFactory.createEmptyBorder(15, 20, 10, 20));

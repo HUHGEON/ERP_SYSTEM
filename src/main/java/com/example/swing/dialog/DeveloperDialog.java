@@ -3,6 +3,7 @@ package com.example.swing.dialog;
 import com.example.dao.DeveloperDAO;
 import com.example.model.Developer;
 import com.example.model.Employee;
+import com.example.util.ComboAutoComplete;
 
 import javax.swing.*;
 import java.awt.*;
@@ -30,6 +31,7 @@ public class DeveloperDialog extends JDialog {
             } catch (Exception ex) {
                 JOptionPane.showMessageDialog(this, "직원 목록 로드 실패: " + ex.getMessage());
             }
+            ComboAutoComplete.apply(employeeBox);
         }
 
         JPanel form = new JPanel(new GridBagLayout());
