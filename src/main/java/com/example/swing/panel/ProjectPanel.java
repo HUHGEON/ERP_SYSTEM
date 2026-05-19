@@ -8,6 +8,7 @@ import com.example.model.Project;
 import com.example.model.ProjectParticipation;
 import com.example.swing.dialog.OutputDialog;
 import com.example.swing.dialog.ProjectDialog;
+import com.example.swing.dialog.ProjectParticipationDialog;
 import com.example.util.UserSession;
 
 import javax.swing.*;
@@ -20,9 +21,10 @@ import java.util.stream.Collectors;
 
 public class ProjectPanel extends JPanel {
 
-    private static final String[] STATUSES = {"", "진행중", "완료"};
-    private static final String[] PROJ_COLS = {"ID", "프로젝트명", "발주처", "시작일", "종료일", "상태"};
-    private static final String[] OUT_COLS  = {"ID", "산출물 유형", "산출물명"};
+    private static final String[] STATUSES   = {"", "진행중", "완료"};
+    private static final String[] PROJ_COLS  = {"ID", "프로젝트명", "발주처", "시작일", "종료일", "상태"};
+    private static final String[] OUT_COLS   = {"ID", "산출물 유형", "산출물명"};
+    private static final String[] MEM_COLS   = {"이름", "역할", "투입일", "종료일"};
 
     private final ProjectDAO projectDAO = new ProjectDAO();
     private final OutputDAO  outputDAO  = new OutputDAO();
@@ -37,16 +39,22 @@ public class ProjectPanel extends JPanel {
     private final DefaultTableModel outputModel = new DefaultTableModel(OUT_COLS, 0) {
         @Override public boolean isCellEditable(int r, int c) { return false; }
     };
+    private final DefaultTableModel memberModel = new DefaultTableModel(MEM_COLS, 0) {
+        @Override public boolean isCellEditable(int r, int c) { return false; }
+    };
 
     private final JTable projectTable = new JTable(projectModel);
     private final JTable outputTable  = new JTable(outputModel);
+    private final JTable memberTable  = new JTable(memberModel);
 
     private final JTextField nameField   = new JTextField(15);
     private final JComboBox<String> statusBox = new JComboBox<>(STATUSES);
+    private final JLabel memberLabel = new JLabel("투입 팀원 — 프로젝트를 선택하세요");
     private final JLabel outputLabel = new JLabel("산출물 — 프로젝트를 선택하세요");
 
-    private List<Project> projectList;
-    private List<Output>  outputList;
+    private List<Project>              projectList;
+    private List<Output>               outputList;
+    private List<ProjectParticipation> memberList;
     private int selectedProjectId = -1;
 
     public ProjectPanel() {
@@ -81,7 +89,28 @@ public class ProjectPanel extends JPanel {
         topPanel.add(new JScrollPane(projectTable), BorderLayout.CENTER);
         topPanel.add(projBtnPanel, BorderLayout.SOUTH);
 
-        // ── 하단: 산출물 ──
+        // ── 하단 왼쪽: 투입 팀원 ──
+        memberTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        memberTable.getTableHeader().setReorderingAllowed(false);
+        memberTable.setRowHeight(24);
+
+        memberLabel.setBorder(BorderFactory.createEmptyBorder(4, 4, 2, 0));
+        memberLabel.setFont(memberLabel.getFont().deriveFont(Font.BOLD));
+
+        JPanel memBtnPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        JButton addMemBtn    = new JButton("투입 추가");
+        JButton editMemBtn   = new JButton("투입 수정");
+        JButton deleteMemBtn = new JButton("투입 삭제");
+        memBtnPanel.add(addMemBtn);
+        memBtnPanel.add(editMemBtn);
+        memBtnPanel.add(deleteMemBtn);
+
+        JPanel memberPanel = new JPanel(new BorderLayout(3, 3));
+        memberPanel.add(memberLabel, BorderLayout.NORTH);
+        memberPanel.add(new JScrollPane(memberTable), BorderLayout.CENTER);
+        memberPanel.add(memBtnPanel, BorderLayout.SOUTH);
+
+        // ── 하단 오른쪽: 산출물 ──
         outputTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         outputTable.getTableHeader().setReorderingAllowed(false);
         outputTable.setRowHeight(24);
@@ -97,10 +126,17 @@ public class ProjectPanel extends JPanel {
         outputLabel.setBorder(BorderFactory.createEmptyBorder(4, 4, 2, 0));
         outputLabel.setFont(outputLabel.getFont().deriveFont(Font.BOLD));
 
+        JPanel outputPanel = new JPanel(new BorderLayout(3, 3));
+        outputPanel.add(outputLabel, BorderLayout.NORTH);
+        outputPanel.add(new JScrollPane(outputTable), BorderLayout.CENTER);
+        outputPanel.add(outBtnPanel, BorderLayout.SOUTH);
+
+        JSplitPane bottomSplit = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, memberPanel, outputPanel);
+        bottomSplit.setResizeWeight(0.5);
+        bottomSplit.setDividerSize(5);
+
         JPanel bottomPanel = new JPanel(new BorderLayout(3, 3));
-        bottomPanel.add(outputLabel, BorderLayout.NORTH);
-        bottomPanel.add(new JScrollPane(outputTable), BorderLayout.CENTER);
-        bottomPanel.add(outBtnPanel, BorderLayout.SOUTH);
+        bottomPanel.add(bottomSplit, BorderLayout.CENTER);
 
         JSplitPane split = new JSplitPane(JSplitPane.VERTICAL_SPLIT, topPanel, bottomPanel);
         split.setResizeWeight(0.55);
@@ -113,6 +149,9 @@ public class ProjectPanel extends JPanel {
             addProjBtn.setVisible(false);
             editProjBtn.setVisible(false);
             deleteProjBtn.setVisible(false);
+            addMemBtn.setVisible(false);
+            editMemBtn.setVisible(false);
+            deleteMemBtn.setVisible(false);
             addOutBtn.setVisible(false);
             editOutBtn.setVisible(false);
             deleteOutBtn.setVisible(false);
@@ -136,11 +175,24 @@ public class ProjectPanel extends JPanel {
                 if (row >= 0) {
                     Project p = projectList.get(row);
                     selectedProjectId = p.getId();
+                    memberLabel.setText("투입 팀원 — " + p.getProjectName());
                     outputLabel.setText("산출물 — " + p.getProjectName());
+                    loadMembers();
                     loadOutputs();
                 }
             }
         });
+
+        addMemBtn.addActionListener(e -> {
+            if (selectedProjectId < 0) { info("프로젝트를 먼저 선택하세요."); return; }
+            openParticipationDialog(null);
+        });
+        editMemBtn.addActionListener(e -> {
+            int row = memberTable.getSelectedRow();
+            if (row < 0) { info("수정할 투입 인원을 선택하세요."); return; }
+            openParticipationDialog(memberList.get(row));
+        });
+        deleteMemBtn.addActionListener(e -> deleteMember());
 
         addOutBtn.addActionListener(e -> {
             if (selectedProjectId < 0) { info("프로젝트를 먼저 선택하세요."); return; }
@@ -175,9 +227,23 @@ public class ProjectPanel extends JPanel {
                 });
             }
             selectedProjectId = -1;
+            memberModel.setRowCount(0);
             outputModel.setRowCount(0);
+            memberLabel.setText("투입 팀원 — 프로젝트를 선택하세요");
             outputLabel.setText("산출물 — 프로젝트를 선택하세요");
         } catch (Exception ex) { error("데이터 로드 오류: " + ex.getMessage()); }
+    }
+
+    private void loadMembers() {
+        if (selectedProjectId < 0) return;
+        try {
+            memberList = participationDAO.getByProjectId(selectedProjectId);
+            memberModel.setRowCount(0);
+            for (ProjectParticipation pp : memberList) {
+                String end = (pp.getEndDate() != null && !pp.getEndDate().isEmpty()) ? pp.getEndDate() : "진행중";
+                memberModel.addRow(new Object[]{pp.getDeveloperName(), pp.getProjectRole(), pp.getStartDate(), end});
+            }
+        } catch (Exception ex) { error("팀원 로드 오류: " + ex.getMessage()); }
     }
 
     private void loadOutputs() {
@@ -197,6 +263,13 @@ public class ProjectPanel extends JPanel {
         if (dialog.isSaved()) loadProjects();
     }
 
+    private void openParticipationDialog(ProjectParticipation pp) {
+        JFrame frame = (JFrame) SwingUtilities.getWindowAncestor(this);
+        ProjectParticipationDialog dialog = new ProjectParticipationDialog(frame, pp, participationDAO);
+        dialog.setVisible(true);
+        if (dialog.isSaved()) loadMembers();
+    }
+
     private void openOutputDialog(Output o) {
         JFrame frame = (JFrame) SwingUtilities.getWindowAncestor(this);
         OutputDialog dialog = new OutputDialog(frame, o, outputDAO, selectedProjectId);
@@ -211,6 +284,17 @@ public class ProjectPanel extends JPanel {
         if (JOptionPane.showConfirmDialog(this, "'" + p.getProjectName() + "' 프로젝트를 삭제하시겠습니까?",
                 "삭제 확인", JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION) {
             try { projectDAO.delete(p.getId()); loadProjects(); }
+            catch (Exception ex) { error("삭제 오류: " + ex.getMessage()); }
+        }
+    }
+
+    private void deleteMember() {
+        int row = memberTable.getSelectedRow();
+        if (row < 0) { info("삭제할 투입 인원을 선택하세요."); return; }
+        ProjectParticipation pp = memberList.get(row);
+        if (JOptionPane.showConfirmDialog(this, "'" + pp.getDeveloperName() + "' 투입 기록을 삭제하시겠습니까?",
+                "삭제 확인", JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION) {
+            try { participationDAO.delete(pp.getId()); loadMembers(); }
             catch (Exception ex) { error("삭제 오류: " + ex.getMessage()); }
         }
     }

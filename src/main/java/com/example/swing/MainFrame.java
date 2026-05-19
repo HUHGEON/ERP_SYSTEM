@@ -57,7 +57,6 @@ public class MainFrame extends JFrame {
         reg("평가",         "프로젝트 평가", new EvaluationPanel());
         reg("경력",         "경력 관리",     new CareerPanel());
         reg("프로젝트",     "프로젝트",      new ProjectPanel());
-        reg("프로젝트투입", "프로젝트 투입", new ProjectParticipationPanel());
         reg("스터디",       "스터디",        new StudyPanel());
         reg("휴가기록",     "휴가 기록",     new LeavePanel());
 
@@ -315,7 +314,6 @@ public class MainFrame extends JFrame {
         addSection(sb, "업무 이력");
         addItem(sb, "경력",         "경력 관리");
         addItem(sb, "프로젝트",     "프로젝트");
-        addItem(sb, "프로젝트투입", "프로젝트 투입");
 
         addSection(sb, "역량 개발");
         addItem(sb, "스터디",       "스터디");
