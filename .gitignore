@@ -19,3 +19,7 @@ target/
 
 # 환경 설정 (DB/ERP 비밀번호 포함 - 절대 커밋 금지)
 src/main/resources/application.properties
+
+# 실행 스크립트 (각 PC 환경에 맞게 개별 관리)
+run_swing.sh
+run_swing_win.sh
