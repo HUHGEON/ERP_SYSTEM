@@ -159,6 +159,7 @@ public class ProjectPanel extends JPanel {
 
         // ── 이벤트 ──
         searchBtn.addActionListener(e -> loadProjects());
+        nameField.addActionListener(e -> loadProjects());
         resetBtn.addActionListener(e -> { nameField.setText(""); statusBox.setSelectedIndex(0); loadProjects(); });
 
         addProjBtn.addActionListener(e -> openProjectDialog(null));
@@ -308,6 +309,14 @@ public class ProjectPanel extends JPanel {
             try { outputDAO.delete(o.getId()); loadOutputs(); }
             catch (Exception ex) { error("삭제 오류: " + ex.getMessage()); }
         }
+    }
+
+    /** 외부 호출: 프로젝트명으로 필터 후 해당 행 선택. */
+    public void filterByProjectName(String projectName, int projectId) {
+        nameField.setText(projectName);
+        statusBox.setSelectedIndex(0);
+        loadProjects();
+        selectRow(projectId);
     }
 
     /** 외부에서 호출: 해당 프로젝트로 이동하여 행 선택. 필터에 가려져 있으면 필터 초기화 후 재시도. */

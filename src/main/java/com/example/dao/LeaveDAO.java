@@ -136,4 +136,16 @@ public class LeaveDAO {
         }
         return 0;
     }
+
+    public int getTotalLeaveDays(int employeeId) throws SQLException {
+        String sql = "SELECT p.annual_leave_days FROM employee e JOIN position p ON e.position_id = p.id WHERE e.id = ?";
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, employeeId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) return rs.getInt("annual_leave_days");
+            }
+        }
+        return 0;
+    }
 }

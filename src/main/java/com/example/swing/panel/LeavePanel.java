@@ -4,6 +4,8 @@ import com.example.dao.LeaveDAO;
 import com.example.model.LeaveRecord;
 import com.example.swing.dialog.LeaveDialog;
 import com.example.util.UserSession;
+import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
@@ -13,7 +15,7 @@ import java.util.List;
 public class LeavePanel extends JPanel {
 
     private static final String[] LEAVE_TYPES = {"", "연가", "공가"};
-    private static final String[] COLUMNS = {"ID", "직원 이름", "휴가 종류", "시작일", "종료일"};
+    private static final String[] COLUMNS = {"ID", "직원 이름", "휴가 종류", "시작일", "종료일", "휴가일수"};
 
     private final boolean isAdmin = UserSession.getInstance().isAdmin();
     private final int myId = UserSession.getInstance().getEmployeeId();
@@ -66,6 +68,7 @@ public class LeavePanel extends JPanel {
         }
 
         searchBtn.addActionListener(e -> loadData());
+        nameField.addActionListener(e -> loadData());
         resetBtn.addActionListener(e -> {
             nameField.setText("");
             leaveTypeBox.setSelectedIndex(0);
@@ -91,7 +94,7 @@ public class LeavePanel extends JPanel {
             for (LeaveRecord lr : currentList) {
                 tableModel.addRow(new Object[]{
                     lr.getId(), lr.getEmployeeName(), lr.getLeaveType(),
-                    lr.getStartDate(), lr.getEndDate()
+                    lr.getStartDate(), lr.getEndDate(), calcDays(lr.getStartDate(), lr.getEndDate())
                 });
             }
         } catch (Exception ex) {
@@ -123,6 +126,13 @@ public class LeavePanel extends JPanel {
         }
     }
 
+    /** 외부 호출: 직원 이름으로 필터 후 목록 표시. */
+    public void filterByEmployee(String employeeName) {
+        nameField.setText(employeeName);
+        leaveTypeBox.setSelectedIndex(0);
+        loadData();
+    }
+
     /** 외부 호출: 휴가 id로 행 선택. 필터/권한으로 안 보이면 필터 초기화 후 재시도. */
     public void selectLeaveById(int leaveId) {
         if (!selectRow(leaveId)) {
@@ -145,6 +155,16 @@ public class LeavePanel extends JPanel {
             }
         }
         return false;
+    }
+
+    private static String calcDays(String start, String end) {
+        if (start == null || end == null || start.isEmpty() || end.isEmpty()) return "-";
+        try {
+            long days = ChronoUnit.DAYS.between(LocalDate.parse(start), LocalDate.parse(end)) + 1;
+            return days + "일";
+        } catch (Exception e) {
+            return "-";
+        }
     }
 
     private void showInfo(String msg) { JOptionPane.showMessageDialog(this, msg); }

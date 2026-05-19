@@ -162,6 +162,8 @@ public class SeminarPanel extends JPanel {
 
         // 이벤트
         searchBtn.addActionListener(e -> loadSeminars());
+        nameField.addActionListener(e -> loadSeminars());
+        topicField.addActionListener(e -> loadSeminars());
         resetBtn.addActionListener(e -> { nameField.setText(""); topicField.setText(""); loadSeminars(); });
 
         addSeminarBtn.addActionListener(e -> openSeminarDialog(null));

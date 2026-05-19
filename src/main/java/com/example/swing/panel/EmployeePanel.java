@@ -104,6 +104,7 @@ public class EmployeePanel extends JPanel {
 
         // 이벤트
         searchBtn.addActionListener(e -> loadData());
+        nameField.addActionListener(e -> loadData());
         resetBtn.addActionListener(e -> {
             nameField.setText("");
             gradeBox.setSelectedIndex(0);
