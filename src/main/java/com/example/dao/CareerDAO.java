@@ -27,7 +27,7 @@ public class CareerDAO {
                 while (rs.next()) {
                     list.add(new Career(
                         rs.getInt("id"), rs.getInt("employee_id"), rs.getString("employee_name"),
-                        rs.getString("company_name"), rs.getString("start_time"), rs.getString("end_time")
+                        rs.getString("company_name"), dateStr(rs, "start_time"), dateStr(rs, "end_time")
                     ));
                 }
             }
@@ -45,7 +45,7 @@ public class CareerDAO {
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     list.add(new Career(rs.getInt("id"), rs.getInt("employee_id"), rs.getString("employee_name"),
-                        rs.getString("company_name"), rs.getString("start_time"), rs.getString("end_time")));
+                        rs.getString("company_name"), dateStr(rs, "start_time"), dateStr(rs, "end_time")));
                 }
             }
         }
@@ -92,5 +92,10 @@ public class CareerDAO {
             ps.setInt(1, id);
             ps.executeUpdate();
         }
+    }
+
+    private static String dateStr(ResultSet rs, String col) throws SQLException {
+        java.sql.Date d = rs.getDate(col);
+        return d != null ? d.toString() : null;
     }
 }

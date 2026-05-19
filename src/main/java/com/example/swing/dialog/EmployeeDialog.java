@@ -41,6 +41,7 @@ public class EmployeeDialog extends JDialog {
     private List<Position> allPositions;
     private boolean saved = false;
     private final boolean isEdit;
+    private String originalResidentNumber = null;
 
     public EmployeeDialog(JFrame parent, Employee emp, EmployeeDAO dao) {
         super(parent, emp == null ? "직원 추가" : "직원 수정", true);
@@ -56,7 +57,7 @@ public class EmployeeDialog extends JDialog {
         positionLabel.setFont(positionLabel.getFont().deriveFont(Font.BOLD));
         positionLabel.setForeground(new Color(25, 50, 120));
 
-        // 전화번호 자동 포맷 필터 (010-XXXX-XXXX)
+        // 전화번호 포맷 필터 (두 모드 공통 — 주민번호 필터는 값 세팅 후 설치)
         ((AbstractDocument) phoneField.getDocument()).setDocumentFilter(new PhoneFilter());
 
         // 이메일 패널 ([local] @ [domain])
@@ -100,7 +101,6 @@ public class EmployeeDialog extends JDialog {
         });
 
         if (!isEdit) {
-            MaskingUtil.installResidentFilter(residentField);
             hireDateField.setText(LocalDate.now().toString());
             try { idField.setText(String.valueOf(dao.nextId())); } catch (Exception e) { idField.setText("1"); }
         }
@@ -109,7 +109,8 @@ public class EmployeeDialog extends JDialog {
             idField.setText(String.valueOf(emp.getId()));
             nameField.setText(emp.getEmployeeName());
             deptBox.setSelectedItem(emp.getDepartment());
-            residentField.setText(emp.getResidentNumber());
+            originalResidentNumber = emp.getResidentNumber();
+            residentField.setText(MaskingUtil.maskResidentNumber(emp.getResidentNumber()));
             educationField.setText(emp.getEducation());
             phoneField.setText(emp.getPhoneNumber() != null ? emp.getPhoneNumber() : "");
             // 이메일 split
@@ -129,6 +130,9 @@ public class EmployeeDialog extends JDialog {
                 } catch (Exception ignored) {}
             }
         }
+
+        // 주민번호 필터: 값 세팅 완료 후 설치 (기존 텍스트는 그대로 유지됨)
+        MaskingUtil.installResidentFilter(residentField);
 
         updateTechFieldState();
         deptBox.addActionListener(e -> updateTechFieldState());
@@ -193,6 +197,7 @@ public class EmployeeDialog extends JDialog {
     private void save() {
         String name      = nameField.getText().trim();
         String resident  = residentField.getText().trim();
+        if (isEdit && resident.contains("*")) resident = originalResidentNumber;
         String education = educationField.getText().trim();
         String dept      = (String) deptBox.getSelectedItem();
         String phone     = phoneField.getText().trim();
