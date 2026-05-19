@@ -31,7 +31,7 @@ public class HrRecordDAO {
             sql.append(" AND e.employee_name LIKE ?");
             params.add("%" + name + "%");
         }
-        sql.append(" ORDER BY h.promotion_date DESC");
+        sql.append(" ORDER BY h.id");
 
         List<HrRecord> list = new ArrayList<>();
         try (Connection conn = DatabaseConnection.getConnection();

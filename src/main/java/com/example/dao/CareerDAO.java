@@ -18,6 +18,7 @@ public class CareerDAO {
             sql.append(" AND e.employee_name LIKE ?");
             params.add("%" + name + "%");
         }
+        sql.append(" ORDER BY c.id");
 
         List<Career> list = new ArrayList<>();
         try (Connection conn = DatabaseConnection.getConnection();

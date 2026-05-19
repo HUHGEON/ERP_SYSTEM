@@ -20,7 +20,7 @@ public class SeminarDAO {
             sql.append(" AND topic LIKE ?");
             params.add("%" + topic + "%");
         }
-        sql.append(" ORDER BY date_time DESC");
+        sql.append(" ORDER BY id");
 
         List<Seminar> list = new ArrayList<>();
         try (Connection conn = DatabaseConnection.getConnection();

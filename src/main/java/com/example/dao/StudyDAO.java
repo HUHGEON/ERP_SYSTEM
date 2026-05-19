@@ -20,6 +20,7 @@ public class StudyDAO {
             sql.append(" AND category = ?");
             params.add(category);
         }
+        sql.append(" ORDER BY id");
 
         List<Study> list = new ArrayList<>();
         try (Connection conn = DatabaseConnection.getConnection();

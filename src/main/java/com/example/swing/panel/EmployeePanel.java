@@ -14,6 +14,8 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.Comparator;
 import java.util.List;
+import javax.swing.RowSorter;
+import javax.swing.SortOrder;
 
 public class EmployeePanel extends JPanel {
 
@@ -69,6 +71,7 @@ public class EmployeePanel extends JPanel {
             String s = a.toString().replace("만원", "").trim();
             try { return Integer.parseInt(s); } catch (NumberFormatException e) { return 0; }
         }));
+        sorter.setSortKeys(List.of(new RowSorter.SortKey(0, SortOrder.ASCENDING)));
 
         JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
         JButton addBtn = new JButton("추가");
