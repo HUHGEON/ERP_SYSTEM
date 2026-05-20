@@ -56,6 +56,7 @@ public class ProjectPanel extends JPanel {
     private List<Output>               outputList;
     private List<ProjectParticipation> memberList;
     private int selectedProjectId = -1;
+    private Project selectedProject = null;
 
     public ProjectPanel() {
         setLayout(new BorderLayout(5, 5));
@@ -159,6 +160,7 @@ public class ProjectPanel extends JPanel {
 
         // ── 이벤트 ──
         searchBtn.addActionListener(e -> loadProjects());
+        nameField.addActionListener(e -> loadProjects());
         resetBtn.addActionListener(e -> { nameField.setText(""); statusBox.setSelectedIndex(0); loadProjects(); });
 
         addProjBtn.addActionListener(e -> openProjectDialog(null));
@@ -175,6 +177,7 @@ public class ProjectPanel extends JPanel {
                 if (row >= 0) {
                     Project p = projectList.get(row);
                     selectedProjectId = p.getId();
+                    selectedProject = p;
                     memberLabel.setText("투입 팀원 — " + p.getProjectName());
                     outputLabel.setText("산출물 — " + p.getProjectName());
                     loadMembers();
@@ -184,18 +187,20 @@ public class ProjectPanel extends JPanel {
         });
 
         addMemBtn.addActionListener(e -> {
-            if (selectedProjectId < 0) { info("프로젝트를 먼저 선택하세요."); return; }
-            openParticipationDialog(null);
+            if (selectedProject != null && selectedProject.getEndDate() != null && !selectedProject.getEndDate().isEmpty()) {
+                info("완료된 프로젝트에는 인원을 투입할 수 없습니다."); return;
+            }
+            openParticipationDialog(null, selectedProjectId);
         });
         editMemBtn.addActionListener(e -> {
             int row = memberTable.getSelectedRow();
             if (row < 0) { info("수정할 투입 인원을 선택하세요."); return; }
-            openParticipationDialog(memberList.get(row));
+            openParticipationDialog(memberList.get(row), selectedProjectId);
         });
         deleteMemBtn.addActionListener(e -> deleteMember());
 
         addOutBtn.addActionListener(e -> {
-            if (selectedProjectId < 0) { info("프로젝트를 먼저 선택하세요."); return; }
+            if (selectedProjectId < 0) { info("산출물을 추가하려면 프로젝트를 먼저 선택하세요."); return; }
             openOutputDialog(null);
         });
         editOutBtn.addActionListener(e -> {
@@ -227,6 +232,7 @@ public class ProjectPanel extends JPanel {
                 });
             }
             selectedProjectId = -1;
+            selectedProject = null;
             memberModel.setRowCount(0);
             outputModel.setRowCount(0);
             memberLabel.setText("투입 팀원 — 프로젝트를 선택하세요");
@@ -263,9 +269,9 @@ public class ProjectPanel extends JPanel {
         if (dialog.isSaved()) loadProjects();
     }
 
-    private void openParticipationDialog(ProjectParticipation pp) {
+    private void openParticipationDialog(ProjectParticipation pp, int preselectedProjectId) {
         JFrame frame = (JFrame) SwingUtilities.getWindowAncestor(this);
-        ProjectParticipationDialog dialog = new ProjectParticipationDialog(frame, pp, participationDAO);
+        ProjectParticipationDialog dialog = new ProjectParticipationDialog(frame, pp, participationDAO, preselectedProjectId);
         dialog.setVisible(true);
         if (dialog.isSaved()) loadMembers();
     }
@@ -308,6 +314,14 @@ public class ProjectPanel extends JPanel {
             try { outputDAO.delete(o.getId()); loadOutputs(); }
             catch (Exception ex) { error("삭제 오류: " + ex.getMessage()); }
         }
+    }
+
+    /** 외부 호출: 프로젝트명으로 필터 후 해당 행 선택. */
+    public void filterByProjectName(String projectName, int projectId) {
+        nameField.setText(projectName);
+        statusBox.setSelectedIndex(0);
+        loadProjects();
+        selectRow(projectId);
     }
 
     /** 외부에서 호출: 해당 프로젝트로 이동하여 행 선택. 필터에 가려져 있으면 필터 초기화 후 재시도. */

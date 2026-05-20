@@ -36,7 +36,7 @@ public class ProjectParticipationDAO {
                     list.add(new ProjectParticipation(
                         rs.getInt("id"), rs.getInt("project_id"), rs.getString("project_name"),
                         rs.getInt("developer_id"), rs.getString("employee_name"),
-                        rs.getString("project_role"), rs.getString("start_date"), rs.getString("end_date")
+                        rs.getString("project_role"), dateStr(rs, "start_date"), dateStr(rs, "end_date")
                     ));
                 }
             }
@@ -59,7 +59,7 @@ public class ProjectParticipationDAO {
                 while (rs.next()) {
                     list.add(new ProjectParticipation(rs.getInt("id"), rs.getInt("project_id"),
                         rs.getString("project_name"), rs.getInt("developer_id"), rs.getString("employee_name"),
-                        rs.getString("project_role"), rs.getString("start_date"), rs.getString("end_date")));
+                        rs.getString("project_role"), dateStr(rs, "start_date"), dateStr(rs, "end_date")));
                 }
             }
         }
@@ -82,7 +82,7 @@ public class ProjectParticipationDAO {
                     list.add(new ProjectParticipation(
                         rs.getInt("id"), rs.getInt("project_id"), rs.getString("project_name"),
                         rs.getInt("developer_id"), rs.getString("employee_name"),
-                        rs.getString("project_role"), rs.getString("start_date"), rs.getString("end_date")));
+                        rs.getString("project_role"), dateStr(rs, "start_date"), dateStr(rs, "end_date")));
                 }
             }
         }
@@ -106,7 +106,7 @@ public class ProjectParticipationDAO {
                     return new ProjectParticipation(
                         rs.getInt("id"), rs.getInt("project_id"), rs.getString("project_name"),
                         rs.getInt("developer_id"), rs.getString("employee_name"),
-                        rs.getString("project_role"), rs.getString("start_date"), rs.getString("end_date"));
+                        rs.getString("project_role"), dateStr(rs, "start_date"), dateStr(rs, "end_date"));
                 }
             }
         }
@@ -128,11 +128,25 @@ public class ProjectParticipationDAO {
                 list.add(new ProjectParticipation(
                     rs.getInt("id"), rs.getInt("project_id"), rs.getString("project_name"),
                     rs.getInt("developer_id"), rs.getString("employee_name"),
-                    rs.getString("project_role"), rs.getString("start_date"), rs.getString("end_date")
+                    rs.getString("project_role"), dateStr(rs, "start_date"), dateStr(rs, "end_date")
                 ));
             }
         }
         return list;
+    }
+
+    /** 해당 개발자가 현재 진행 중인 다른 프로젝트(end_date IS NULL)가 있는지 확인. excludeId는 수정 시 자기 자신 제외용. */
+    public boolean isActivelyParticipating(int developerId, int excludeId) throws SQLException {
+        String sql = "SELECT COUNT(*) FROM project_participation WHERE developer_id = ? AND end_date IS NULL AND id != ?";
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, developerId);
+            ps.setInt(2, excludeId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) return rs.getInt(1) > 0;
+            }
+        }
+        return false;
     }
 
     public int nextId() throws SQLException {
@@ -185,5 +199,10 @@ public class ProjectParticipationDAO {
             ps.setInt(1, id);
             ps.executeUpdate();
         }
+    }
+
+    private static String dateStr(ResultSet rs, String col) throws SQLException {
+        java.sql.Date d = rs.getDate(col);
+        return d != null ? d.toString() : null;
     }
 }

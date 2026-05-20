@@ -56,6 +56,7 @@ public class CareerPanel extends JPanel {
         }
 
         searchBtn.addActionListener(e -> loadData());
+        nameField.addActionListener(e -> loadData());
         resetBtn.addActionListener(e -> { nameField.setText(""); loadData(); });
         addBtn.addActionListener(e -> openDialog(null));
         editBtn.addActionListener(e -> {

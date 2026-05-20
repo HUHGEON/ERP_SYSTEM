@@ -24,6 +24,7 @@ public class SeminarPanel extends JPanel {
     private static final Color CARD_BG     = new Color(252, 252, 253);
     private static final Color CARD_BORDER = new Color(218, 220, 226);
     private static final Color NAVY        = new Color(25,  50, 120);
+    private static final Color DATE_FG     = new Color(35,  60, 130);
     private static final Color RATING_FG   = new Color(200, 140, 0);
     private static final Color CONTENT_FG  = new Color(40,  45,  65);
 
@@ -162,6 +163,8 @@ public class SeminarPanel extends JPanel {
 
         // 이벤트
         searchBtn.addActionListener(e -> loadSeminars());
+        nameField.addActionListener(e -> loadSeminars());
+        topicField.addActionListener(e -> loadSeminars());
         resetBtn.addActionListener(e -> { nameField.setText(""); topicField.setText(""); loadSeminars(); });
 
         addSeminarBtn.addActionListener(e -> openSeminarDialog(null));
@@ -186,9 +189,8 @@ public class SeminarPanel extends JPanel {
         });
 
         addMemberBtn.addActionListener(e -> {
-            if (selectedSeminarId < 0) { info("세미나를 먼저 선택하세요."); return; }
             JFrame frame = (JFrame) SwingUtilities.getWindowAncestor(this);
-            SeminarParticipationDialog dialog = new SeminarParticipationDialog(frame, null, spDAO);
+            SeminarParticipationDialog dialog = new SeminarParticipationDialog(frame, null, spDAO, selectedSeminarId);
             dialog.setVisible(true);
             if (dialog.isSaved()) loadMembers();
         });
@@ -196,7 +198,6 @@ public class SeminarPanel extends JPanel {
         deleteMemberBtn.addActionListener(e -> deleteMember());
 
         addEvalBtn.addActionListener(e -> {
-            if (selectedSeminarId < 0) { info("세미나를 먼저 선택하세요."); return; }
             JFrame frame = (JFrame) SwingUtilities.getWindowAncestor(this);
             SeminarEvaluationDialog dialog = new SeminarEvaluationDialog(frame, null, selectedSeminarId, evalDAO);
             dialog.setVisible(true);
@@ -262,24 +263,24 @@ public class SeminarPanel extends JPanel {
         JPanel card = new JPanel(new BorderLayout(0, 2));
         card.setBackground(CARD_BG);
         card.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createMatteBorder(0, 3, 0, 0, RATING_FG),
+            BorderFactory.createMatteBorder(0, 3, 0, 0, DATE_FG),
             BorderFactory.createCompoundBorder(
                 BorderFactory.createLineBorder(CARD_BORDER),
                 BorderFactory.createEmptyBorder(5, 10, 5, 10)
             )
         ));
         card.setAlignmentX(Component.LEFT_ALIGNMENT);
-        card.setMaximumSize(new Dimension(Integer.MAX_VALUE, Integer.MAX_VALUE));
+        card.setMaximumSize(new Dimension(Integer.MAX_VALUE, 50));
 
         JPanel topRow = new JPanel(new BorderLayout());
         topRow.setBackground(CARD_BG);
 
         JLabel nameLbl = new JLabel(ev.getEmployeeName());
-        nameLbl.setFont(new Font("SansSerif", Font.BOLD, 11));
-        nameLbl.setForeground(NAVY);
+        nameLbl.setFont(new Font("SansSerif", Font.BOLD, 10));
+        nameLbl.setForeground(DATE_FG);
 
         JLabel ratingLbl = new JLabel(String.format("★ %.2f", ev.getRating()));
-        ratingLbl.setFont(new Font("SansSerif", Font.BOLD, 11));
+        ratingLbl.setFont(new Font("SansSerif", Font.BOLD, 10));
         ratingLbl.setForeground(RATING_FG);
 
         topRow.add(nameLbl,  BorderLayout.WEST);

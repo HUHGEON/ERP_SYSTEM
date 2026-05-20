@@ -25,6 +25,7 @@ public class ProjectDAO {
         } else if ("완료".equals(status)) {
             sql.append(" AND p.end_date IS NOT NULL");
         }
+        sql.append(" ORDER BY p.id");
 
         List<Project> list = new ArrayList<>();
         try (Connection conn = DatabaseConnection.getConnection();
@@ -37,8 +38,8 @@ public class ProjectDAO {
                         rs.getInt("customer_id"),
                         rs.getString("customer_name"),
                         rs.getString("project_name"),
-                        rs.getString("start_date"),
-                        rs.getString("end_date")
+                        dateStr(rs, "start_date"),
+                        dateStr(rs, "end_date")
                     ));
                 }
             }
@@ -101,7 +102,7 @@ public class ProjectDAO {
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     list.add(new Project(rs.getInt("id"), rs.getInt("customer_id"), rs.getString("customer_name"),
-                        rs.getString("project_name"), rs.getString("start_date"), rs.getString("end_date")));
+                        rs.getString("project_name"), dateStr(rs, "start_date"), dateStr(rs, "end_date")));
                 }
             }
         }
@@ -156,5 +157,10 @@ public class ProjectDAO {
             ps.setInt(1, id);
             ps.executeUpdate();
         }
+    }
+
+    private static String dateStr(ResultSet rs, String col) throws SQLException {
+        java.sql.Date d = rs.getDate(col);
+        return d != null ? d.toString() : null;
     }
 }

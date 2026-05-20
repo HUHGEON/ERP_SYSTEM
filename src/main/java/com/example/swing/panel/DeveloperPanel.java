@@ -50,6 +50,7 @@ public class DeveloperPanel extends JPanel {
         add(btnPanel, BorderLayout.SOUTH);
 
         searchBtn.addActionListener(e -> loadData());
+        nameField.addActionListener(e -> loadData());
         resetBtn.addActionListener(e -> { nameField.setText(""); loadData(); });
         addBtn.addActionListener(e -> openDialog(null));
         editBtn.addActionListener(e -> {

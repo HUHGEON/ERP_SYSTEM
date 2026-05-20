@@ -226,7 +226,7 @@ public class EvaluationPanel extends JPanel {
     private void loadProjects() {
         try {
             projectList = isAdmin
-                ? projectDAO.getAll()
+                ? projectDAO.search("", "완료")
                 : projectDAO.getCompletedByEmployeeId(myId);
             projectModel.setRowCount(0);
             for (Project p : projectList)

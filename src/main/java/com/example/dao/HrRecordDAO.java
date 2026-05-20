@@ -18,7 +18,7 @@ public class HrRecordDAO {
         HrRecord h = new HrRecord(
             rs.getInt("id"), rs.getInt("employee_id"),
             rs.getString("employee_name"), rs.getInt("position_id"),
-            rs.getString("promotion_date")
+            dateStr(rs, "promotion_date")
         );
         h.setPositionName(rs.getString("position_name"));
         return h;
@@ -31,7 +31,7 @@ public class HrRecordDAO {
             sql.append(" AND e.employee_name LIKE ?");
             params.add("%" + name + "%");
         }
-        sql.append(" ORDER BY h.promotion_date DESC");
+        sql.append(" ORDER BY h.id");
 
         List<HrRecord> list = new ArrayList<>();
         try (Connection conn = DatabaseConnection.getConnection();
@@ -102,5 +102,10 @@ public class HrRecordDAO {
             ps.setInt(1, id);
             ps.executeUpdate();
         }
+    }
+
+    private static String dateStr(ResultSet rs, String col) throws SQLException {
+        java.sql.Date d = rs.getDate(col);
+        return d != null ? d.toString() : null;
     }
 }

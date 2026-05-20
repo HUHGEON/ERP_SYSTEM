@@ -27,7 +27,7 @@ public class StudyActivityHistoryDAO {
                 while (rs.next()) {
                     list.add(new StudyActivityHistory(
                         rs.getInt("id"), rs.getInt("study_id"), rs.getString("study_name"),
-                        rs.getString("activity_date"), rs.getString("content")
+                        dateStr(rs, "activity_date"), rs.getString("content")
                     ));
                 }
             }
@@ -89,7 +89,7 @@ public class StudyActivityHistoryDAO {
                 while (rs.next()) {
                     list.add(new StudyActivityHistory(
                         rs.getInt("id"), rs.getInt("study_id"), rs.getString("study_name"),
-                        rs.getString("activity_date"), rs.getString("content")
+                        dateStr(rs, "activity_date"), rs.getString("content")
                     ));
                 }
             }
@@ -109,7 +109,7 @@ public class StudyActivityHistoryDAO {
                 while (rs.next())
                     list.add(new StudyActivityHistory(
                         rs.getInt("id"), rs.getInt("study_id"), rs.getString("study_name"),
-                        rs.getString("activity_date"), rs.getString("content")));
+                        dateStr(rs, "activity_date"), rs.getString("content")));
             }
         }
         return list;
@@ -121,5 +121,10 @@ public class StudyActivityHistoryDAO {
             ps.setInt(1, id);
             ps.executeUpdate();
         }
+    }
+
+    private static String dateStr(ResultSet rs, String col) throws SQLException {
+        java.sql.Date d = rs.getDate(col);
+        return d != null ? d.toString() : null;
     }
 }
