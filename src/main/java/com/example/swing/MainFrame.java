@@ -60,7 +60,6 @@ public class MainFrame extends JFrame {
         reg("직원",         "직원 관리",     new EmployeePanel());
         reg("인사기록",     "인사 기록",     new HrRecordPanel());
         reg("평가",         "프로젝트 평가", new EvaluationPanel());
-        reg("경력",         "경력 관리",     new CareerPanel());
         reg("프로젝트",     "프로젝트",      new ProjectPanel());
         reg("스터디",       "스터디",        new StudyPanel());
         reg("세미나",       "세미나",        new SeminarPanel());
@@ -317,8 +316,7 @@ public class MainFrame extends JFrame {
         addItem(sb, "인사기록",     "인사 기록");
         addItem(sb, "평가",         "프로젝트 평가");
 
-        addSection(sb, "업무 이력");
-        addItem(sb, "경력",         "경력 관리");
+        addSection(sb, "프로젝트");
         addItem(sb, "프로젝트",     "프로젝트");
 
         addSection(sb, "역량 개발");
@@ -421,6 +419,8 @@ public class MainFrame extends JFrame {
         btn.addActionListener(e -> {
             contentCards.show(contentPanel, cardKey);
             activateBtn(btn, pageTitle);
+            JPanel panel = keyToPanel.get(cardKey);
+            if (panel != null) SwingUtilities.invokeLater(() -> styleAllTables(panel));
         });
 
         menuBtns.add(btn);
@@ -460,6 +460,17 @@ public class MainFrame extends JFrame {
                 styleAllTables((Container) c);
             }
         }
+    }
+
+    private void distributeColumns(JTable table, int[] preferred, int totalPreferred) {
+        int available = table.getParent() != null ? table.getParent().getWidth() : table.getWidth();
+        if (available <= 0) available = totalPreferred;
+        int total = Math.max(totalPreferred, 1);
+        for (int col = 0; col < preferred.length; col++) {
+            int w = (int) Math.round((double) preferred[col] / total * available);
+            table.getColumnModel().getColumn(col).setPreferredWidth(w);
+        }
+        table.revalidate();
     }
 
     private void applyTableStyle(JTable table) {
@@ -513,6 +524,36 @@ public class MainFrame extends JFrame {
         });
         table.getTableHeader().setPreferredSize(new Dimension(0, 32));
         table.getTableHeader().setBackground(TH_BG);
+
+        // 컬럼 너비 자동 조절 (내용 기반 비율로 전체 너비에 꽉 채움)
+        table.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
+        int colCount = table.getColumnCount();
+        int[] preferred = new int[colCount];
+        int totalPreferred = 0;
+        for (int col = 0; col < colCount; col++) {
+            int maxWidth = 0;
+            var headerRenderer = table.getTableHeader().getDefaultRenderer();
+            var headerComp = headerRenderer.getTableCellRendererComponent(
+                    table, table.getColumnModel().getColumn(col).getHeaderValue(), false, false, -1, col);
+            maxWidth = Math.max(maxWidth, headerComp.getPreferredSize().width + 24);
+            for (int row = 0; row < table.getRowCount(); row++) {
+                var renderer = table.getCellRenderer(row, col);
+                var comp = table.prepareRenderer(renderer, row, col);
+                maxWidth = Math.max(maxWidth, comp.getPreferredSize().width + 16);
+            }
+            preferred[col] = Math.min(maxWidth, 300);
+            totalPreferred += preferred[col];
+        }
+        // 테이블 가용 너비에 맞게 비율로 분배
+        final int[] finalPreferred = preferred;
+        final int finalTotal = totalPreferred;
+        table.addComponentListener(new java.awt.event.ComponentAdapter() {
+            @Override
+            public void componentResized(java.awt.event.ComponentEvent e) {
+                distributeColumns(table, finalPreferred, finalTotal);
+            }
+        });
+        distributeColumns(table, finalPreferred, finalTotal);
 
         // 바디
         table.setRowHeight(28);
