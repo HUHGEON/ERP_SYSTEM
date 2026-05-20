@@ -30,4 +30,4 @@ find "$SRC_DIR" -name "*.java" | while read f; do cygpath -w "$f"; done > /tmp/s
 javac -encoding UTF-8 -cp "$CP" -d "$OUT_WIN" @/tmp/sources.txt
 
 # 실행
-java -cp "$CP" com.example.Main
+java -Dfile.encoding=UTF-8 -Djava.awt.im.style=on-the-spot -cp "$CP" com.example.swing.Main
