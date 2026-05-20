@@ -4,9 +4,11 @@ import com.example.dao.StudyActivityHistoryDAO;
 import com.example.dao.StudyDAO;
 import com.example.model.Study;
 import com.example.model.StudyActivityHistory;
+import com.example.util.MaskingUtil;
 
 import javax.swing.*;
 import java.awt.*;
+import java.time.LocalDate;
 import java.util.List;
 
 public class StudyActivityHistoryDialog extends JDialog {
@@ -34,6 +36,7 @@ public class StudyActivityHistoryDialog extends JDialog {
         form.setBorder(BorderFactory.createEmptyBorder(15, 20, 10, 20));
         GridBagConstraints lc = lc(); GridBagConstraints fc = fc();
 
+        MaskingUtil.installDateFilter(dateField);
         idField.setEditable(false);
         contentArea.setLineWrap(true); contentArea.setWrapStyleWord(true);
         JScrollPane contentScroll = new JScrollPane(contentArea);
@@ -69,10 +72,14 @@ public class StudyActivityHistoryDialog extends JDialog {
 
     private void save() {
         if (studyBox.getSelectedItem() == null) { JOptionPane.showMessageDialog(this, "스터디를 선택하세요."); return; }
+        String date = dateField.getText().trim();
+        if (!date.isEmpty()) {
+            try { LocalDate.parse(date); }
+            catch (Exception ex) { JOptionPane.showMessageDialog(this, "날짜 형식이 올바르지 않습니다. (YYYY-MM-DD)", "날짜 오류", JOptionPane.ERROR_MESSAGE); return; }
+        }
         try {
             int id = Integer.parseInt(idField.getText().trim());
             Study s = (Study) studyBox.getSelectedItem();
-            String date = dateField.getText().trim();
             StudyActivityHistory h = new StudyActivityHistory(id, s.getId(), s.getStudyName(),
                 date.isEmpty() ? null : date, contentArea.getText().trim());
             if (isEdit) dao.update(h); else dao.insert(h);

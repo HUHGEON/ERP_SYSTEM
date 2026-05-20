@@ -5,10 +5,14 @@ import com.example.util.UserSession;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableCellRenderer;
+import javax.swing.table.TableModel;
+import javax.swing.table.TableRowSorter;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Comparator;
 import java.util.List;
 
 public class MainFrame extends JFrame {
@@ -44,6 +48,7 @@ public class MainFrame extends JFrame {
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setSize(1300, 800);
         setMinimumSize(new Dimension(980, 640));
+        setExtendedState(JFrame.MAXIMIZED_BOTH);
         setLocationRelativeTo(null);
         setLayout(new BorderLayout());
 
@@ -458,7 +463,22 @@ public class MainFrame extends JFrame {
     }
 
     private void applyTableStyle(JTable table) {
-        // 헤더 렌더러
+        // 헤더 클릭 정렬 + 숫자 컬럼은 숫자 비교, 문자 컬럼은 사전순 비교
+        TableRowSorter<TableModel> sorter = new TableRowSorter<>(table.getModel());
+        Comparator<Object> smartCmp = (a, b) -> {
+            try {
+                return Double.compare(Double.parseDouble(a.toString()), Double.parseDouble(b.toString()));
+            } catch (NumberFormatException e) {
+                return a.toString().compareToIgnoreCase(b.toString());
+            }
+        };
+        for (int col = 0; col < table.getModel().getColumnCount(); col++) {
+            sorter.setComparator(col, smartCmp);
+        }
+        table.setRowSorter(sorter);
+        sorter.setSortKeys(Arrays.asList(new RowSorter.SortKey(0, SortOrder.ASCENDING)));
+
+        // 헤더 렌더러 (정렬 방향 ▲▼ 포함)
         table.getTableHeader().setDefaultRenderer(new DefaultTableCellRenderer() {
             @Override
             public Component getTableCellRendererComponent(
@@ -474,6 +494,20 @@ public class MainFrame extends JFrame {
                     BorderFactory.createEmptyBorder(4, 12, 4, 12)
                 ));
                 lbl.setHorizontalAlignment(SwingConstants.LEFT);
+
+                // 정렬 방향 표시
+                String text = value == null ? "" : value.toString();
+                RowSorter<?> sorter = t.getRowSorter();
+                if (sorter != null) {
+                    int modelCol = t.convertColumnIndexToModel(col);
+                    for (RowSorter.SortKey key : sorter.getSortKeys()) {
+                        if (key.getColumn() == modelCol) {
+                            text += key.getSortOrder() == SortOrder.ASCENDING ? "  ▲" : "  ▼";
+                            break;
+                        }
+                    }
+                }
+                lbl.setText(text);
                 return lbl;
             }
         });

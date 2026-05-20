@@ -4,11 +4,13 @@ import com.example.dao.CareerDAO;
 import com.example.dao.DeveloperDAO;
 import com.example.model.Career;
 import com.example.model.Developer;
+import com.example.util.MaskingUtil;
 
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.FocusAdapter;
 import java.awt.event.FocusEvent;
+import java.time.LocalDate;
 import java.util.List;
 
 public class CareerDialog extends JDialog {
@@ -39,6 +41,8 @@ public class CareerDialog extends JDialog {
         form.setBorder(BorderFactory.createEmptyBorder(15, 20, 10, 20));
         GridBagConstraints lc = lc(); GridBagConstraints fc = fc();
 
+        MaskingUtil.installDateFilter(startField);
+        MaskingUtil.installDateFilter(endField);
         idField.setEditable(false);
         lc.gridy = 1; fc.gridy = 1; form.add(new JLabel("개발자:"), lc); form.add(developerBox, fc);
         lc.gridy = 2; fc.gridy = 2; form.add(new JLabel("회사명:"), lc); form.add(companyField, fc);
@@ -96,6 +100,8 @@ public class CareerDialog extends JDialog {
         if (company.isEmpty()) { JOptionPane.showMessageDialog(this, "회사명을 입력하세요."); return; }
         if (start.isEmpty()) { JOptionPane.showMessageDialog(this, "입사일을 입력하세요."); return; }
         if (end.isEmpty()) { JOptionPane.showMessageDialog(this, "퇴사일을 입력하세요."); return; }
+        try { LocalDate.parse(start); LocalDate.parse(end); }
+        catch (Exception ex) { JOptionPane.showMessageDialog(this, "날짜 형식이 올바르지 않습니다. (YYYY-MM-DD)", "날짜 오류", JOptionPane.ERROR_MESSAGE); return; }
         if (!validateDates()) {
             JOptionPane.showMessageDialog(this, "퇴사일이 입사일보다 이전일 수 없습니다.", "날짜 오류", JOptionPane.ERROR_MESSAGE);
             return;

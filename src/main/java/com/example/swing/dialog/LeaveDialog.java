@@ -3,25 +3,30 @@ package com.example.swing.dialog;
 import com.example.dao.LeaveDAO;
 import com.example.model.Employee;
 import com.example.model.LeaveRecord;
+import com.example.util.ComboAutoComplete;
+import com.example.util.UserSession;
 
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.FocusAdapter;
 import java.awt.event.FocusEvent;
+import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 
 public class LeaveDialog extends JDialog {
 
-    private static final String[] LEAVE_TYPES = {"연가", "공가"};
-
     private final JTextField idField = new JTextField(10);
     private final JComboBox<Employee> employeeBox = new JComboBox<>();
-    private final JComboBox<String> leaveTypeBox = new JComboBox<>(LEAVE_TYPES);
+    private final JComboBox<String> leaveTypeBox;
     private final JTextField startDateField = new JTextField(12);
     private final JTextField endDateField = new JTextField(12);
     private final JLabel remainingLabel = new JLabel();
 
     private final LeaveDAO dao;
+    private final boolean isAdmin;
+    private final int myId;
+    private final LeaveRecord originalRecord;
     private boolean saved = false;
     private final boolean isEdit;
 
@@ -29,12 +34,28 @@ public class LeaveDialog extends JDialog {
         super(parent, record == null ? "휴가 추가" : "휴가 수정", true);
         this.dao = dao;
         this.isEdit = record != null;
+        this.originalRecord = record;
+        this.isAdmin = UserSession.getInstance().isAdmin();
+        this.myId = UserSession.getInstance().getEmployeeId();
+
+        leaveTypeBox = isAdmin
+            ? new JComboBox<>(new String[]{"연가", "공가"})
+            : new JComboBox<>(new String[]{"연가"});
 
         try {
             List<Employee> employees = dao.getAllEmployees();
             for (Employee e : employees) employeeBox.addItem(e);
         } catch (Exception ex) {
             JOptionPane.showMessageDialog(this, "직원 목록 로드 실패: " + ex.getMessage());
+        }
+
+        if (!isAdmin) {
+            for (int i = 0; i < employeeBox.getItemCount(); i++) {
+                if (employeeBox.getItemAt(i).getId() == myId) { employeeBox.setSelectedIndex(i); break; }
+            }
+            employeeBox.setEnabled(false);
+        } else {
+            ComboAutoComplete.apply(employeeBox);
         }
 
         remainingLabel.setFont(new Font("SansSerif", Font.BOLD, 12));
@@ -61,10 +82,7 @@ public class LeaveDialog extends JDialog {
         if (isEdit) {
             idField.setText(String.valueOf(record.getId()));
             for (int i = 0; i < employeeBox.getItemCount(); i++) {
-                if (employeeBox.getItemAt(i).getId() == record.getEmployeeId()) {
-                    employeeBox.setSelectedIndex(i);
-                    break;
-                }
+                if (employeeBox.getItemAt(i).getId() == record.getEmployeeId()) { employeeBox.setSelectedIndex(i); break; }
             }
             leaveTypeBox.setSelectedItem(record.getLeaveType());
             startDateField.setText(record.getStartDate() != null ? record.getStartDate() : "");
@@ -104,18 +122,22 @@ public class LeaveDialog extends JDialog {
     }
 
     private void updateRemainingLabel() {
-        boolean isYeonga = "연가".equals(leaveTypeBox.getSelectedItem());
-        if (!isYeonga || employeeBox.getSelectedItem() == null) {
+        Employee emp = getSelectedEmployee();
+        if (!"연가".equals(leaveTypeBox.getSelectedItem()) || emp == null) {
             remainingLabel.setText("");
             return;
         }
         try {
-            Employee emp = (Employee) employeeBox.getSelectedItem();
             int remaining = dao.getRemainingLeaveDays(emp.getId());
             remainingLabel.setText("잔여 연차: " + remaining + "일");
         } catch (Exception ex) {
             remainingLabel.setText("잔여 연차 조회 실패");
         }
+    }
+
+    private Employee getSelectedEmployee() {
+        Object sel = employeeBox.getSelectedItem();
+        return sel instanceof Employee ? (Employee) sel : null;
     }
 
     private boolean validateDates() {
@@ -132,8 +154,9 @@ public class LeaveDialog extends JDialog {
     private void save() {
         String startDate = startDateField.getText().trim();
         String endDate = endDateField.getText().trim();
+        Employee emp = getSelectedEmployee();
 
-        if (employeeBox.getSelectedItem() == null) { JOptionPane.showMessageDialog(this, "직원을 선택하세요."); return; }
+        if (emp == null) { JOptionPane.showMessageDialog(this, "직원을 선택하세요."); return; }
         if (startDate.isEmpty()) { JOptionPane.showMessageDialog(this, "시작일을 입력하세요."); return; }
         if (endDate.isEmpty()) { JOptionPane.showMessageDialog(this, "종료일을 입력하세요."); return; }
         if (!validateDates()) {
@@ -141,12 +164,70 @@ public class LeaveDialog extends JDialog {
             return;
         }
 
+        if (!isAdmin) {
+            try {
+                if (LocalDate.parse(startDate).isBefore(LocalDate.now())) {
+                    JOptionPane.showMessageDialog(this, "시작일은 오늘 이후여야 합니다.", "날짜 오류", JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(this, "시작일 형식이 올바르지 않습니다. (YYYY-MM-DD)", "날짜 오류", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+        }
+
+        String leaveType = (String) leaveTypeBox.getSelectedItem();
+        if ("연가".equals(leaveType)) {
+            try {
+                LocalDate start = LocalDate.parse(startDate);
+                LocalDate end = LocalDate.parse(endDate);
+                long netAdditional;
+
+                if (!isEdit) {
+                    List<LeaveRecord> overlaps = dao.getOverlappingRecords(emp.getId(), "연가", startDate, endDate);
+                    if (overlaps.isEmpty()) {
+                        netAdditional = ChronoUnit.DAYS.between(start, end) + 1;
+                    } else {
+                        LocalDate mergedStart = start;
+                        LocalDate mergedEnd = end;
+                        long existingDays = 0;
+                        for (LeaveRecord o : overlaps) {
+                            LocalDate oStart = LocalDate.parse(o.getStartDate());
+                            LocalDate oEnd = LocalDate.parse(o.getEndDate());
+                            if (oStart.isBefore(mergedStart)) mergedStart = oStart;
+                            if (oEnd.isAfter(mergedEnd)) mergedEnd = oEnd;
+                            existingDays += ChronoUnit.DAYS.between(oStart, oEnd) + 1;
+                        }
+                        netAdditional = ChronoUnit.DAYS.between(mergedStart, mergedEnd) + 1 - existingDays;
+                    }
+                } else {
+                    long originalDays = ChronoUnit.DAYS.between(
+                        LocalDate.parse(originalRecord.getStartDate()),
+                        LocalDate.parse(originalRecord.getEndDate())) + 1;
+                    long newDays = ChronoUnit.DAYS.between(start, end) + 1;
+                    netAdditional = newDays - originalDays;
+                }
+
+                if (netAdditional > 0) {
+                    int remaining = dao.getRemainingLeaveDays(emp.getId());
+                    if (remaining < netAdditional) {
+                        JOptionPane.showMessageDialog(this,
+                            "잔여 연차가 부족합니다. (잔여: " + remaining + "일, 추가 필요: " + netAdditional + "일)\n"
+                            + "마이너스 연차는 사용 불가합니다. 다시 입력하여 등록하세요.",
+                            "연차 부족", JOptionPane.WARNING_MESSAGE);
+                        return;
+                    }
+                }
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(this, "날짜 형식이 올바르지 않습니다. (YYYY-MM-DD)", "날짜 오류", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+        }
+
         try {
             int id = Integer.parseInt(idField.getText().trim());
-            Employee emp = (Employee) employeeBox.getSelectedItem();
-            LeaveRecord lr = new LeaveRecord(id, emp.getId(), emp.getEmployeeName(),
-                (String) leaveTypeBox.getSelectedItem(), startDate, endDate);
-            if (isEdit) dao.update(lr); else dao.insert(lr);
+            LeaveRecord lr = new LeaveRecord(id, emp.getId(), emp.getEmployeeName(), leaveType, startDate, endDate);
+            if (isEdit) dao.update(lr); else dao.insertOrMerge(lr);
             saved = true;
             dispose();
         } catch (NumberFormatException ex) {

@@ -131,4 +131,44 @@ public class LeaveDAO {
         }
         return 0;
     }
+
+    public List<LeaveRecord> getOverlappingRecords(int employeeId, String leaveType, String startDate, String endDate) throws SQLException {
+        String sql = "SELECT id, employee_id, leave_type, start_date, end_date FROM leave_records " +
+                     "WHERE employee_id = ? AND leave_type = ? AND start_date <= ? AND end_date >= ?";
+        List<LeaveRecord> list = new ArrayList<>();
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, employeeId);
+            ps.setString(2, leaveType);
+            ps.setString(3, endDate);
+            ps.setString(4, startDate);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    list.add(new LeaveRecord(rs.getInt("id"), rs.getInt("employee_id"), "",
+                        rs.getString("leave_type"), rs.getString("start_date"), rs.getString("end_date")));
+                }
+            }
+        }
+        return list;
+    }
+
+    public void insertOrMerge(LeaveRecord lr) throws SQLException {
+        List<LeaveRecord> overlaps = getOverlappingRecords(lr.getEmployeeId(), lr.getLeaveType(), lr.getStartDate(), lr.getEndDate());
+        if (overlaps.isEmpty()) {
+            insert(lr);
+            return;
+        }
+        String mergedStart = lr.getStartDate();
+        String mergedEnd = lr.getEndDate();
+        for (LeaveRecord o : overlaps) {
+            if (o.getStartDate().compareTo(mergedStart) < 0) mergedStart = o.getStartDate();
+            if (o.getEndDate().compareTo(mergedEnd) > 0) mergedEnd = o.getEndDate();
+        }
+        LeaveRecord first = overlaps.get(0);
+        update(new LeaveRecord(first.getId(), first.getEmployeeId(), first.getEmployeeName(),
+            first.getLeaveType(), mergedStart, mergedEnd));
+        for (int i = 1; i < overlaps.size(); i++) {
+            delete(overlaps.get(i).getId());
+        }
+    }
 }

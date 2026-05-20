@@ -66,6 +66,17 @@ public class SeminarParticipationDAO {
         }
     }
 
+    public void update(SeminarParticipation sp) throws SQLException {
+        String sql = "UPDATE seminar_participation SET seminar_id=?, employee_id=? WHERE id=?";
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, sp.getSeminarId());
+            ps.setInt(2, sp.getEmployeeId());
+            ps.setInt(3, sp.getId());
+            ps.executeUpdate();
+        }
+    }
+
     public void delete(int id) throws SQLException {
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement("DELETE FROM seminar_participation WHERE id=?")) {

@@ -7,6 +7,7 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.FocusAdapter;
 import java.awt.event.FocusEvent;
+import java.time.LocalDate;
 
 public class ProjectDialog extends JDialog {
 
@@ -104,6 +105,11 @@ public class ProjectDialog extends JDialog {
         if (name.isEmpty()) { JOptionPane.showMessageDialog(this, "프로젝트명을 입력하세요."); return; }
         if (customerName.isEmpty()) { JOptionPane.showMessageDialog(this, "발주처를 입력하세요."); return; }
         if (startDate.isEmpty()) { JOptionPane.showMessageDialog(this, "시작일을 입력하세요."); return; }
+        String endDateRaw = endDateField.getText().trim();
+        try {
+            LocalDate.parse(startDate);
+            if (!endDateRaw.isEmpty()) LocalDate.parse(endDateRaw);
+        } catch (Exception ex) { JOptionPane.showMessageDialog(this, "날짜 형식이 올바르지 않습니다. (YYYY-MM-DD)", "날짜 오류", JOptionPane.ERROR_MESSAGE); return; }
         if (!validateDates()) {
             JOptionPane.showMessageDialog(this, "종료일이 시작일보다 이전일 수 없습니다.", "날짜 오류", JOptionPane.ERROR_MESSAGE);
             return;

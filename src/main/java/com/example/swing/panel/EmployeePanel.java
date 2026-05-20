@@ -16,7 +16,7 @@ public class EmployeePanel extends JPanel {
 
     private static final String[] GRADES = {"", "사원", "대리", "과장", "부장", "이사"};
     private static final String[] DEPARTMENTS = {"", "개발자", "마케팅", "경영관리", "연구개발"};
-    private static final String[] COLUMNS = {"ID", "이름", "직급", "부서", "주민번호", "학력"};
+    private static final String[] COLUMNS = {"ID", "이름", "직급", "부서", "전화번호", "이메일", "주민번호", "학력"};
 
     private final boolean isAdmin = UserSession.getInstance().isAdmin();
     private final int myId = UserSession.getInstance().getEmployeeId();
@@ -154,7 +154,10 @@ public class EmployeePanel extends JPanel {
             for (Employee e : currentList) {
                 tableModel.addRow(new Object[]{
                     e.getId(), e.getEmployeeName(), e.getGrade(),
-                    e.getDepartment(), e.getResidentNumber(), e.getEducation()
+                    e.getDepartment(),
+                    e.getPhoneNumber() != null ? e.getPhoneNumber() : "",
+                    e.getEmail()       != null ? e.getEmail()       : "",
+                    e.getResidentNumber(), e.getEducation()
                 });
             }
         } catch (Exception ex) {

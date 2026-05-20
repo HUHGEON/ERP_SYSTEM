@@ -6,11 +6,13 @@ import com.example.dao.ProjectParticipationDAO;
 import com.example.model.Developer;
 import com.example.model.Project;
 import com.example.model.ProjectParticipation;
+import com.example.util.MaskingUtil;
 
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.FocusAdapter;
 import java.awt.event.FocusEvent;
+import java.time.LocalDate;
 import java.util.List;
 
 public class ProjectParticipationDialog extends JDialog {
@@ -45,6 +47,8 @@ public class ProjectParticipationDialog extends JDialog {
         form.setBorder(BorderFactory.createEmptyBorder(15, 20, 10, 20));
         GridBagConstraints lc = lc(); GridBagConstraints fc = fc();
 
+        MaskingUtil.installDateFilter(startField);
+        MaskingUtil.installDateFilter(endField);
         idField.setEditable(false);
         lc.gridy = 1; fc.gridy = 1; form.add(new JLabel("프로젝트:"), lc); form.add(projectBox, fc);
         lc.gridy = 2; fc.gridy = 2; form.add(new JLabel("개발자:"), lc); form.add(developerBox, fc);
@@ -105,6 +109,11 @@ public class ProjectParticipationDialog extends JDialog {
         if (projectBox.getSelectedItem() == null || developerBox.getSelectedItem() == null) {
             JOptionPane.showMessageDialog(this, "프로젝트와 개발자를 선택하세요."); return;
         }
+        String endRaw = endField.getText().trim();
+        try {
+            LocalDate.parse(start);
+            if (!endRaw.isEmpty()) LocalDate.parse(endRaw);
+        } catch (Exception ex) { JOptionPane.showMessageDialog(this, "날짜 형식이 올바르지 않습니다. (YYYY-MM-DD)", "날짜 오류", JOptionPane.ERROR_MESSAGE); return; }
         if (!validateDates()) {
             JOptionPane.showMessageDialog(this, "종료일이 투입일보다 이전일 수 없습니다.", "날짜 오류", JOptionPane.ERROR_MESSAGE);
             return;

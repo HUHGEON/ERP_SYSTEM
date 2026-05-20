@@ -79,7 +79,7 @@ public class SeminarParticipationDialog extends JDialog {
             Seminar s = (Seminar) seminarBox.getSelectedItem();
             Employee e = (Employee) employeeBox.getSelectedItem();
             SeminarParticipation sp = new SeminarParticipation(id, s.getId(), s.getSeminarName(), e.getId(), e.getEmployeeName());
-            dao.insert(sp);
+            if (isEdit) dao.update(sp); else dao.insert(sp);
             saved = true;
             dispose();
         } catch (Exception ex) {
