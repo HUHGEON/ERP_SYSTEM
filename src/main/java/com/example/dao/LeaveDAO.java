@@ -152,6 +152,18 @@ public class LeaveDAO {
         return list;
     }
 
+    public int getUsedAnnualLeaveDays(int employeeId) throws SQLException {
+        String sql = "SELECT used_days FROM employee_leave_status WHERE id = ?";
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, employeeId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) return rs.getInt("used_days");
+            }
+        }
+        return 0;
+    }
+
     public void insertOrMerge(LeaveRecord lr) throws SQLException {
         List<LeaveRecord> overlaps = getOverlappingRecords(lr.getEmployeeId(), lr.getLeaveType(), lr.getStartDate(), lr.getEndDate());
         if (overlaps.isEmpty()) {

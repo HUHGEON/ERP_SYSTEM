@@ -35,6 +35,10 @@ public class OutputPanel extends JPanel {
         table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         table.getTableHeader().setReorderingAllowed(false);
         table.setRowHeight(24);
+        table.getColumnModel().getColumn(0).setPreferredWidth(45);   // ID
+        table.getColumnModel().getColumn(1).setPreferredWidth(150);  // 프로젝트명
+        table.getColumnModel().getColumn(2).setPreferredWidth(90);   // 산출물 유형
+        table.getColumnModel().getColumn(3).setPreferredWidth(150);  // 산출물명
 
         JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
         JButton addBtn = new JButton("추가"); JButton editBtn = new JButton("수정"); JButton deleteBtn = new JButton("삭제");
@@ -50,7 +54,7 @@ public class OutputPanel extends JPanel {
         editBtn.addActionListener(e -> {
             int row = table.getSelectedRow();
             if (row < 0) { JOptionPane.showMessageDialog(this, "수정할 산출물을 선택하세요."); return; }
-            openDialog(currentList.get(row));
+            openDialog(currentList.get(table.convertRowIndexToModel(row)));
         });
         deleteBtn.addActionListener(e -> deleteSelected());
         loadData();
@@ -75,7 +79,7 @@ public class OutputPanel extends JPanel {
     private void deleteSelected() {
         int row = table.getSelectedRow();
         if (row < 0) { JOptionPane.showMessageDialog(this, "삭제할 산출물을 선택하세요."); return; }
-        Output o = currentList.get(row);
+        Output o = currentList.get(table.convertRowIndexToModel(row));
         if (JOptionPane.showConfirmDialog(this, "'" + o.getOutputName() + "' 산출물을 삭제하시겠습니까?",
                 "삭제 확인", JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION) {
             try { dao.delete(o.getId()); loadData(); }

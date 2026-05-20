@@ -40,6 +40,10 @@ public class EmployeeDialog extends JDialog {
     private final JTextField sinipPermField = new JTextField();
     private CardLayout sinipExtraCards;
     private JPanel     sinipExtraPanel;
+    private final DefaultTableModel sinipCareerModel = new DefaultTableModel(CAREER_COLS, 0) {
+        @Override public boolean isCellEditable(int r, int c) { return true; }
+    };
+    private final JTable sinipCareerTable = new JTable(sinipCareerModel);
 
     // ── 경력 추가 ──
     private final JTextField gyeongName     = new JTextField();
@@ -153,6 +157,7 @@ public class EmployeeDialog extends JDialog {
         sinipDeptBox.addActionListener(e -> updateSinipExtra());
         updateSinipExtra();
         updateSinipPosition();
+        sinipCareerModel.addTableModelListener(e -> updateSinipPosition());
         careerModel.addTableModelListener(e -> { updateGyeongPosition(); refreshCareerValidation(); });
 
         // ── 버튼 ──
@@ -175,23 +180,25 @@ public class EmployeeDialog extends JDialog {
         add(btnPanel, BorderLayout.SOUTH);
     }
 
-    // ── 신입 패널: 공통 + 신입 전용 필드 전부 하나의 GridBagLayout ──
+    // ── 신입 패널: 기본 정보 + 선택적 경력 이력 ──
     private JPanel buildSinipPanel() {
-        JPanel p = new JPanel(new GridBagLayout());
+        JPanel p = new JPanel(new BorderLayout(5, 5));
         p.setBorder(BorderFactory.createEmptyBorder(8, 24, 12, 24));
+
+        JPanel info = new JPanel(new GridBagLayout());
         GridBagConstraints lc = lc(), fc = fc();
         int r = 0;
-        row(p, lc, fc, r++, "이름:",                 sinipName);
-        row(p, lc, fc, r++, "주민번호:",             sinipResident);
-        row(p, lc, fc, r++, "학력:",                 sinipEduc);
-        row(p, lc, fc, r++, "전화번호:",             sinipPhone);
-        row(p, lc, fc, r++, "이메일:",               emailPanel(sinipEmailLocal, sinipEmailDomain));
-        row(p, lc, fc, r++, "입사일 (YYYY-MM-DD):", sinipHireDate);
+        row(info, lc, fc, r++, "이름:",                 sinipName);
+        row(info, lc, fc, r++, "주민번호:",             sinipResident);
+        row(info, lc, fc, r++, "학력:",                 sinipEduc);
+        row(info, lc, fc, r++, "전화번호:",             sinipPhone);
+        row(info, lc, fc, r++, "이메일:",               emailPanel(sinipEmailLocal, sinipEmailDomain));
+        row(info, lc, fc, r++, "입사일 (YYYY-MM-DD):", sinipHireDate);
 
         sinipPosLabel.setForeground(new Color(0, 100, 180));
         sinipPosLabel.setFont(sinipPosLabel.getFont().deriveFont(Font.BOLD));
-        row(p, lc, fc, r++, "직급 (자동):", sinipPosLabel);
-        row(p, lc, fc, r++, "부서:",        sinipDeptBox);
+        row(info, lc, fc, r++, "직급 (자동):", sinipPosLabel);
+        row(info, lc, fc, r++, "부서:",        sinipDeptBox);
 
         // 입사일 변경 시 직급 자동 갱신
         sinipHireDate.getDocument().addDocumentListener(new DocumentListener() {
@@ -211,21 +218,87 @@ public class EmployeeDialog extends JDialog {
         GridBagConstraints ec = new GridBagConstraints();
         ec.gridy = r; ec.fill = GridBagConstraints.HORIZONTAL;
         ec.weightx = 1.0; ec.gridwidth = GridBagConstraints.REMAINDER;
-        p.add(sinipExtraPanel, ec);
+        info.add(sinipExtraPanel, ec);
+
+        // 경력 테이블 (선택사항)
+        sinipCareerTable.setRowHeight(24);
+        sinipCareerTable.getTableHeader().setReorderingAllowed(false);
+        sinipCareerTable.getColumnModel().getColumn(0).setPreferredWidth(160);
+        sinipCareerTable.getColumnModel().getColumn(1).setPreferredWidth(130);
+        sinipCareerTable.getColumnModel().getColumn(2).setPreferredWidth(130);
+
+        JTextField scStartField = new JTextField();
+        MaskingUtil.installDateFilter(scStartField);
+        DefaultCellEditor scStartEditor = new DefaultCellEditor(scStartField);
+        scStartEditor.setClickCountToStart(1);
+        sinipCareerTable.getColumnModel().getColumn(1).setCellEditor(scStartEditor);
+
+        JTextField scEndField = new JTextField();
+        MaskingUtil.installDateFilter(scEndField);
+        DefaultCellEditor scEndEditor = new DefaultCellEditor(scEndField);
+        scEndEditor.setClickCountToStart(1);
+        sinipCareerTable.getColumnModel().getColumn(2).setCellEditor(scEndEditor);
+
+        JScrollPane scroll = new JScrollPane(sinipCareerTable);
+        scroll.setPreferredSize(new Dimension(440, 90));
+
+        JButton addRowBtn = new JButton("+ 경력 추가");
+        JButton delRowBtn = new JButton("- 경력 삭제");
+        addRowBtn.addActionListener(e -> sinipCareerModel.addRow(new Object[]{"", "", ""}));
+        delRowBtn.addActionListener(e -> {
+            int sel = sinipCareerTable.getSelectedRow();
+            if (sel >= 0) { sinipCareerModel.removeRow(sel); updateSinipPosition(); }
+        });
+        JPanel careerBtns = new JPanel(new FlowLayout(FlowLayout.LEFT, 4, 2));
+        careerBtns.add(addRowBtn);
+        careerBtns.add(delRowBtn);
+
+        JPanel careerPanel = new JPanel(new BorderLayout(3, 3));
+        careerPanel.setBorder(BorderFactory.createTitledBorder("경력 이력 (선택사항 — 호봉 반영)"));
+        careerPanel.add(scroll,     BorderLayout.CENTER);
+        careerPanel.add(careerBtns, BorderLayout.SOUTH);
+
+        p.add(info,        BorderLayout.NORTH);
+        p.add(careerPanel, BorderLayout.CENTER);
         return p;
     }
 
     private void updateSinipPosition() {
         try {
-            long days = ChronoUnit.DAYS.between(LocalDate.parse(sinipHireDate.getText().trim()), LocalDate.now());
+            long days = calcTotalSinipDays();
             if (days < 0) days = 0;
             Position pos = calcPosition(days);
             sinipPosLabel.setText(pos != null
-                ? pos.getPositionName() + "  (" + (days / 365) + "년 근속)"
+                ? pos.getPositionName() + "  (" + (days / 365) + "년 경력)"
                 : "—");
         } catch (Exception ignored) {
             sinipPosLabel.setText("—");
         }
+    }
+
+    private long calcTotalSinipDays() {
+        long careerDays = calcSinipCareerDays();
+        try {
+            long sinceDays = ChronoUnit.DAYS.between(
+                LocalDate.parse(sinipHireDate.getText().trim()), LocalDate.now());
+            if (sinceDays > 0) careerDays += sinceDays;
+        } catch (Exception ignored) {}
+        return careerDays;
+    }
+
+    private long calcSinipCareerDays() {
+        long total = 0;
+        for (int r = 0; r < sinipCareerModel.getRowCount(); r++) {
+            String s = str(sinipCareerModel.getValueAt(r, 1));
+            String e = str(sinipCareerModel.getValueAt(r, 2));
+            if (s.isEmpty() || e.isEmpty()) continue;
+            try {
+                LocalDate start = LocalDate.parse(s);
+                LocalDate end   = LocalDate.parse(e);
+                if (!end.isBefore(start)) total += ChronoUnit.DAYS.between(start, end);
+            } catch (Exception ignored) {}
+        }
+        return total;
     }
 
     private void updateSinipExtra() {
@@ -402,7 +475,41 @@ public class EmployeeDialog extends JDialog {
             info("권한 단계를 입력하세요."); return;
         }
 
-        long days = ChronoUnit.DAYS.between(LocalDate.parse(hireDate), LocalDate.now());
+        // 경력 이력 검증 (선택사항 — 입력된 행만 검증)
+        if (sinipCareerTable.isEditing()) sinipCareerTable.getCellEditor().stopCellEditing();
+        List<String[]> careerRows = new ArrayList<>();
+        List<Integer>  rowNums   = new ArrayList<>();
+        for (int r = 0; r < sinipCareerModel.getRowCount(); r++) {
+            String company = str(sinipCareerModel.getValueAt(r, 0));
+            String start   = str(sinipCareerModel.getValueAt(r, 1));
+            String end     = str(sinipCareerModel.getValueAt(r, 2));
+            if (company.isEmpty() && start.isEmpty() && end.isEmpty()) continue;
+            if (company.isEmpty()) { error((r + 1) + "행: 회사명을 입력하세요."); return; }
+            if (start.isEmpty())   { error((r + 1) + "행: 입사일을 입력하세요."); return; }
+            if (end.isEmpty())     { error((r + 1) + "행: 퇴사일을 입력하세요."); return; }
+            try {
+                LocalDate s    = LocalDate.parse(start);
+                LocalDate e    = LocalDate.parse(end);
+                LocalDate hire = LocalDate.parse(hireDate);
+                if (e.isBefore(s))   { error((r + 1) + "행: 퇴사일이 입사일보다 이전입니다."); return; }
+                if (e.isAfter(hire)) { error((r + 1) + "행: 경력 퇴사일이 현재 회사 입사일(" + hireDate + ")보다 이후입니다."); return; }
+            } catch (Exception ex) { error((r + 1) + "행: 날짜 형식이 올바르지 않습니다. (YYYY-MM-DD)"); return; }
+            careerRows.add(new String[]{company, start, end});
+            rowNums.add(r + 1);
+        }
+        for (int i = 0; i < careerRows.size(); i++) {
+            LocalDate s1 = LocalDate.parse(careerRows.get(i)[1]);
+            LocalDate e1 = LocalDate.parse(careerRows.get(i)[2]);
+            for (int j = i + 1; j < careerRows.size(); j++) {
+                LocalDate s2 = LocalDate.parse(careerRows.get(j)[1]);
+                LocalDate e2 = LocalDate.parse(careerRows.get(j)[2]);
+                if (s1.isBefore(e2) && s2.isBefore(e1)) {
+                    error(rowNums.get(i) + "행과 " + rowNums.get(j) + "행의 경력 기간이 겹칩니다."); return;
+                }
+            }
+        }
+
+        long days = calcTotalSinipDays();
         if (days < 0) days = 0;
         Position pos = calcPosition(days);
         if (pos == null) { error("직급 계산 오류: 직급 데이터를 확인하세요."); return; }
@@ -419,6 +526,12 @@ public class EmployeeDialog extends JDialog {
                 developerDAO.insert(new Developer(id, name, sinipTechField.getText().trim()));
             } else if ("경영관리".equals(dept)) {
                 managementDAO.insert(new Management(id, name, sinipPermField.getText().trim()));
+            }
+            if (!careerRows.isEmpty()) {
+                int careerId = careerDAO.nextId();
+                for (String[] row : careerRows) {
+                    careerDAO.insert(new Career(careerId++, id, name, row[0], row[1], row[2]));
+                }
             }
             saved = true;
             dispose();

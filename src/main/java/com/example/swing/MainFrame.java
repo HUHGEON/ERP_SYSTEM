@@ -1,5 +1,6 @@
 package com.example.swing;
 
+import com.example.dao.EmployeeDAO;
 import com.example.swing.panel.*;
 import com.example.util.UserSession;
 
@@ -41,12 +42,12 @@ public class MainFrame extends JFrame {
     private final java.util.Map<String, JButton>       keyToBtn   = new java.util.HashMap<>();
     private final java.util.Map<String, JPanel>        keyToPanel = new java.util.HashMap<>();
     private String                           currentSectionKey = null;
+    private String                           currentCardKey    = null;
     private JPanel                           sidebar;
 
     public MainFrame() {
         setTitle("인사관리 시스템");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setSize(1300, 800);
         setMinimumSize(new Dimension(980, 640));
         setExtendedState(JFrame.MAXIMIZED_BOTH);
         setLocationRelativeTo(null);
@@ -60,16 +61,23 @@ public class MainFrame extends JFrame {
         reg("직원",         "직원 관리",     new EmployeePanel());
         reg("인사기록",     "인사 기록",     new HrRecordPanel());
         reg("평가",         "프로젝트 평가", new EvaluationPanel());
-        reg("경력",         "경력 관리",     new CareerPanel());
         reg("프로젝트",     "프로젝트",      new ProjectPanel());
         reg("스터디",       "스터디",        new StudyPanel());
         reg("세미나",       "세미나",        new SeminarPanel());
         reg("휴가기록",     "휴가 기록",     new LeavePanel());
 
-        if (!menuBtns.isEmpty()) activateBtn(menuBtns.get(0), "직원 관리");
+        if (!menuBtns.isEmpty()) { activateBtn(menuBtns.get(0), "직원 관리"); currentCardKey = "직원"; }
 
         // 모든 JTable 헤더를 일괄 스타일링 (패널 생성 이후 실행)
         SwingUtilities.invokeLater(() -> styleAllTables(contentPanel));
+
+        // 기존 직원 직급 일괄 재계산 (경력 이력 반영)
+        new Thread(() -> {
+            try {
+                EmployeeDAO empDAO = new EmployeeDAO();
+                empDAO.recalcAllPositions(empDAO.getAllPositions());
+            } catch (Exception ignored) {}
+        }, "position-recalc").start();
     }
 
     private void reg(String key, String title, JPanel panel) {
@@ -100,7 +108,27 @@ public class MainFrame extends JFrame {
         pageTitleLbl.setForeground(new Color(22, 28, 52));
         pageTitleLbl.setBorder(BorderFactory.createEmptyBorder(0, 24, 0, 0));
 
+        JButton refreshBtn = new JButton("새로고침");
+        refreshBtn.setFocusPainted(false);
+        refreshBtn.setFont(new Font("SansSerif", Font.PLAIN, 12));
+        refreshBtn.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createLineBorder(new Color(200, 210, 235)),
+            BorderFactory.createEmptyBorder(4, 12, 4, 12)
+        ));
+        refreshBtn.setBackground(Color.WHITE);
+        refreshBtn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        refreshBtn.addActionListener(e -> {
+            if (currentCardKey == null) return;
+            JPanel panel = keyToPanel.get(currentCardKey);
+            if (panel instanceof Refreshable) ((Refreshable) panel).refresh();
+        });
+
+        JPanel titleRight = new JPanel(new FlowLayout(FlowLayout.RIGHT, 12, 0));
+        titleRight.setOpaque(false);
+        titleRight.add(refreshBtn);
+
         titleBar.add(pageTitleLbl, BorderLayout.CENTER);
+        titleBar.add(titleRight,   BorderLayout.EAST);
 
         contentPanel.setBackground(CONTENT_BG);
         contentWrap.setBackground(CONTENT_BG);
@@ -318,7 +346,6 @@ public class MainFrame extends JFrame {
         addItem(sb, "평가",         "프로젝트 평가");
 
         addSection(sb, "업무 이력");
-        addItem(sb, "경력",         "경력 관리");
         addItem(sb, "프로젝트",     "프로젝트");
 
         addSection(sb, "역량 개발");
@@ -421,6 +448,7 @@ public class MainFrame extends JFrame {
         btn.addActionListener(e -> {
             contentCards.show(contentPanel, cardKey);
             activateBtn(btn, pageTitle);
+            currentCardKey = cardKey;
         });
 
         menuBtns.add(btn);

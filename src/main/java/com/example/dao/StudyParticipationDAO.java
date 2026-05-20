@@ -81,6 +81,15 @@ public class StudyParticipationDAO {
         return list;
     }
 
+    public boolean existsByStudyAndEmployee(int studyId, int employeeId, int excludeId) throws SQLException {
+        String sql = "SELECT COUNT(*) FROM study_participation WHERE study_id=? AND employee_id=? AND id != ?";
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, studyId); ps.setInt(2, employeeId); ps.setInt(3, excludeId);
+            try (ResultSet rs = ps.executeQuery()) { return rs.next() && rs.getInt(1) > 0; }
+        }
+    }
+
     public int nextId() throws SQLException {
         try (Connection conn = DatabaseConnection.getConnection();
              Statement st = conn.createStatement();

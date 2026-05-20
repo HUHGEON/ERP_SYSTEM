@@ -16,7 +16,7 @@ import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.util.List;
 
-public class SeminarPanel extends JPanel {
+public class SeminarPanel extends JPanel implements Refreshable {
 
     private static final String[] SEMINAR_COLS = {"세미나명", "주제", "일시"};
     private static final String[] MEMBER_COLS  = {"참여 직원"};
@@ -24,6 +24,7 @@ public class SeminarPanel extends JPanel {
     private static final Color CARD_BG     = new Color(252, 252, 253);
     private static final Color CARD_BORDER = new Color(218, 220, 226);
     private static final Color NAVY        = new Color(25,  50, 120);
+    private static final Color DATE_FG     = new Color(35,  60, 130);
     private static final Color RATING_FG   = new Color(200, 140, 0);
     private static final Color CONTENT_FG  = new Color(40,  45,  65);
 
@@ -77,6 +78,9 @@ public class SeminarPanel extends JPanel {
         seminarTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         seminarTable.getTableHeader().setReorderingAllowed(false);
         seminarTable.setRowHeight(24);
+        seminarTable.getColumnModel().getColumn(0).setPreferredWidth(160);  // 세미나명
+        seminarTable.getColumnModel().getColumn(1).setPreferredWidth(100);  // 주제
+        seminarTable.getColumnModel().getColumn(2).setPreferredWidth(130);  // 일시
 
         JPanel seminarBtnPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
         JButton addSeminarBtn    = new JButton("추가");
@@ -153,7 +157,6 @@ public class SeminarPanel extends JPanel {
 
         // 권한 제어
         if (!isAdmin) {
-            searchPanel.setVisible(false);
             addSeminarBtn.setVisible(false);
             editSeminarBtn.setVisible(false);
             deleteSeminarBtn.setVisible(false);
@@ -168,7 +171,7 @@ public class SeminarPanel extends JPanel {
         editSeminarBtn.addActionListener(e -> {
             int row = seminarTable.getSelectedRow();
             if (row < 0) { info("수정할 세미나를 선택하세요."); return; }
-            openSeminarDialog(seminarList.get(row));
+            openSeminarDialog(seminarList.get(seminarTable.convertRowIndexToModel(row)));
         });
         deleteSeminarBtn.addActionListener(e -> deleteSeminar());
 
@@ -176,7 +179,7 @@ public class SeminarPanel extends JPanel {
             if (!e.getValueIsAdjusting()) {
                 int row = seminarTable.getSelectedRow();
                 if (row >= 0) {
-                    Seminar s = seminarList.get(row);
+                    Seminar s = seminarList.get(seminarTable.convertRowIndexToModel(row));
                     selectedSeminarId = s.getId();
                     evalTitleLbl.setText("평가 — " + s.getSeminarName());
                     loadMembers();
@@ -186,9 +189,8 @@ public class SeminarPanel extends JPanel {
         });
 
         addMemberBtn.addActionListener(e -> {
-            if (selectedSeminarId < 0) { info("세미나를 먼저 선택하세요."); return; }
             JFrame frame = (JFrame) SwingUtilities.getWindowAncestor(this);
-            SeminarParticipationDialog dialog = new SeminarParticipationDialog(frame, null, spDAO);
+            SeminarParticipationDialog dialog = new SeminarParticipationDialog(frame, null, spDAO, selectedSeminarId);
             dialog.setVisible(true);
             if (dialog.isSaved()) loadMembers();
         });
@@ -196,7 +198,6 @@ public class SeminarPanel extends JPanel {
         deleteMemberBtn.addActionListener(e -> deleteMember());
 
         addEvalBtn.addActionListener(e -> {
-            if (selectedSeminarId < 0) { info("세미나를 먼저 선택하세요."); return; }
             JFrame frame = (JFrame) SwingUtilities.getWindowAncestor(this);
             SeminarEvaluationDialog dialog = new SeminarEvaluationDialog(frame, null, selectedSeminarId, evalDAO);
             dialog.setVisible(true);
@@ -205,6 +206,8 @@ public class SeminarPanel extends JPanel {
 
         loadSeminars();
     }
+
+    @Override public void refresh() { loadSeminars(); }
 
     // ── 데이터 로드 ───────────────────────────────────────────────
     private void loadSeminars() {
@@ -262,24 +265,24 @@ public class SeminarPanel extends JPanel {
         JPanel card = new JPanel(new BorderLayout(0, 2));
         card.setBackground(CARD_BG);
         card.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createMatteBorder(0, 3, 0, 0, RATING_FG),
+            BorderFactory.createMatteBorder(0, 3, 0, 0, DATE_FG),
             BorderFactory.createCompoundBorder(
                 BorderFactory.createLineBorder(CARD_BORDER),
                 BorderFactory.createEmptyBorder(5, 10, 5, 10)
             )
         ));
         card.setAlignmentX(Component.LEFT_ALIGNMENT);
-        card.setMaximumSize(new Dimension(Integer.MAX_VALUE, Integer.MAX_VALUE));
+        card.setMaximumSize(new Dimension(Integer.MAX_VALUE, 50));
 
         JPanel topRow = new JPanel(new BorderLayout());
         topRow.setBackground(CARD_BG);
 
         JLabel nameLbl = new JLabel(ev.getEmployeeName());
-        nameLbl.setFont(new Font("SansSerif", Font.BOLD, 11));
-        nameLbl.setForeground(NAVY);
+        nameLbl.setFont(new Font("SansSerif", Font.BOLD, 10));
+        nameLbl.setForeground(DATE_FG);
 
         JLabel ratingLbl = new JLabel(String.format("★ %.2f", ev.getRating()));
-        ratingLbl.setFont(new Font("SansSerif", Font.BOLD, 11));
+        ratingLbl.setFont(new Font("SansSerif", Font.BOLD, 10));
         ratingLbl.setForeground(RATING_FG);
 
         topRow.add(nameLbl,  BorderLayout.WEST);
@@ -308,7 +311,7 @@ public class SeminarPanel extends JPanel {
     private void deleteSeminar() {
         int row = seminarTable.getSelectedRow();
         if (row < 0) { info("삭제할 세미나를 선택하세요."); return; }
-        Seminar s = seminarList.get(row);
+        Seminar s = seminarList.get(seminarTable.convertRowIndexToModel(row));
         if (JOptionPane.showConfirmDialog(this, "'" + s.getSeminarName() + "' 세미나를 삭제하시겠습니까?",
                 "삭제 확인", JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION) {
             try { seminarDAO.delete(s.getId()); loadSeminars(); }
@@ -319,7 +322,7 @@ public class SeminarPanel extends JPanel {
     private void deleteMember() {
         int row = memberTable.getSelectedRow();
         if (row < 0) { info("제거할 직원을 선택하세요."); return; }
-        SeminarParticipation sp = memberList.get(row);
+        SeminarParticipation sp = memberList.get(memberTable.convertRowIndexToModel(row));
         if (JOptionPane.showConfirmDialog(this, "'" + sp.getEmployeeName() + "' 직원을 세미나에서 제거하시겠습니까?",
                 "삭제 확인", JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION) {
             try { spDAO.delete(sp.getId()); loadMembers(); }

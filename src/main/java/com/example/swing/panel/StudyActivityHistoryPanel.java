@@ -37,6 +37,9 @@ public class StudyActivityHistoryPanel extends JPanel {
         table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         table.getTableHeader().setReorderingAllowed(false);
         table.setRowHeight(24);
+        table.getColumnModel().getColumn(0).setPreferredWidth(120);  // 스터디명
+        table.getColumnModel().getColumn(1).setPreferredWidth(90);   // 활동일자
+        table.getColumnModel().getColumn(2).setPreferredWidth(200);  // 내용
 
         JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
         JButton addBtn = new JButton("추가"); JButton editBtn = new JButton("수정"); JButton deleteBtn = new JButton("삭제");
@@ -58,7 +61,7 @@ public class StudyActivityHistoryPanel extends JPanel {
         editBtn.addActionListener(e -> {
             int row = table.getSelectedRow();
             if (row < 0) { JOptionPane.showMessageDialog(this, "수정할 항목을 선택하세요."); return; }
-            openDialog(currentList.get(row));
+            openDialog(currentList.get(table.convertRowIndexToModel(row)));
         });
         deleteBtn.addActionListener(e -> deleteSelected());
         loadData();
@@ -85,7 +88,7 @@ public class StudyActivityHistoryPanel extends JPanel {
     private void deleteSelected() {
         int row = table.getSelectedRow();
         if (row < 0) { JOptionPane.showMessageDialog(this, "삭제할 항목을 선택하세요."); return; }
-        StudyActivityHistory h = currentList.get(row);
+        StudyActivityHistory h = currentList.get(table.convertRowIndexToModel(row));
         if (JOptionPane.showConfirmDialog(this, "해당 스터디 활동 기록을 삭제하시겠습니까?",
                 "삭제 확인", JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION) {
             try { dao.delete(h.getId()); loadData(); }

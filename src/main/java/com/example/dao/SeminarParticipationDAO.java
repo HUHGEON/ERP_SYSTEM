@@ -47,6 +47,15 @@ public class SeminarParticipationDAO {
         return list;
     }
 
+    public boolean existsBySeminarAndEmployee(int seminarId, int employeeId, int excludeId) throws SQLException {
+        String sql = "SELECT COUNT(*) FROM seminar_participation WHERE seminar_id=? AND employee_id=? AND id != ?";
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, seminarId); ps.setInt(2, employeeId); ps.setInt(3, excludeId);
+            try (ResultSet rs = ps.executeQuery()) { return rs.next() && rs.getInt(1) > 0; }
+        }
+    }
+
     public int nextId() throws SQLException {
         try (Connection conn = DatabaseConnection.getConnection();
              Statement st = conn.createStatement();

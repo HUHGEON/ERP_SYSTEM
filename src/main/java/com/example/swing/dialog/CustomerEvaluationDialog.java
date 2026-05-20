@@ -2,6 +2,7 @@ package com.example.swing.dialog;
 
 import com.example.dao.CustomerEvaluationDAO;
 import com.example.dao.DatabaseConnection;
+import com.example.util.ComboAutoComplete;
 import com.example.dao.ProjectDAO;
 import com.example.dao.ProjectParticipationDAO;
 import com.example.model.Customer;
@@ -54,6 +55,8 @@ public class CustomerEvaluationDialog extends JDialog {
         } catch (Exception ex) {
             JOptionPane.showMessageDialog(this, "콤보 로드 실패: " + ex.getMessage());
         }
+        ComboAutoComplete.apply(participationBox);
+        ComboAutoComplete.apply(customerBox);
     }
 
     private void loadExisting() {

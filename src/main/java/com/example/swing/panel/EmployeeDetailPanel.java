@@ -33,6 +33,9 @@ public class EmployeeDetailPanel extends JPanel {
     private final JLabel techLabel      = new JLabel();
     private final JPanel techRow;
 
+    private final JLabel leaveRemainingLabel = new JLabel();
+    private final JLabel leaveUsedLabel      = new JLabel();
+
     private final JLabel permissionLabel = new JLabel();
     private final JPanel permissionRow;
 
@@ -87,16 +90,18 @@ public class EmployeeDetailPanel extends JPanel {
         gc.anchor = GridBagConstraints.WEST;
 
         // 첫 번째 줄: 이름 | 직급 | 부서 | 입사일 | 승진일
-        addHeaderCell(headerPanel, gc, 0, 0, "이름", nameLabel, new Color(70, 130, 180));
-        addHeaderCell(headerPanel, gc, 2, 0, "직급", gradeLabel, new Color(70, 130, 180));
-        addHeaderCell(headerPanel, gc, 4, 0, "부서", deptLabel, new Color(70, 130, 180));
-        addHeaderCell(headerPanel, gc, 6, 0, "입사일", hireDateLabel, new Color(34, 139, 34));
+        addHeaderCell(headerPanel, gc, 0, 0, "이름",   nameLabel,      new Color(70, 130, 180));
+        addHeaderCell(headerPanel, gc, 2, 0, "직급",   gradeLabel,     new Color(70, 130, 180));
+        addHeaderCell(headerPanel, gc, 4, 0, "부서",   deptLabel,      new Color(70, 130, 180));
+        addHeaderCell(headerPanel, gc, 6, 0, "입사일", hireDateLabel,  new Color(34, 139, 34));
         addHeaderCell(headerPanel, gc, 8, 0, "승진일", promotionLabel, new Color(34, 139, 34));
 
-        // 두 번째 줄 앞: 연봉
-        addHeaderCell(headerPanel, gc, 0, 1, "연봉", salaryLabel, new Color(160, 60, 180));
+        // 두 번째 줄: 연봉 | 잔여 연차 | 사용 연차
+        addHeaderCell(headerPanel, gc, 0, 1, "연봉",      salaryLabel,         new Color(160, 60, 180));
+        addHeaderCell(headerPanel, gc, 2, 1, "잔여 연차", leaveRemainingLabel, new Color(34, 139, 34));
+        addHeaderCell(headerPanel, gc, 4, 1, "사용 연차", leaveUsedLabel,      new Color(200, 80, 0));
 
-        // 두 번째 줄: 기술스택 (개발자만 표시)
+        // 기술스택 (개발자만 표시)
         techRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 4, 0));
         techRow.setBackground(new Color(245, 248, 255));
         JLabel techKey = new JLabel("기술스택:");
@@ -112,7 +117,7 @@ public class EmployeeDetailPanel extends JPanel {
         gc.fill = GridBagConstraints.HORIZONTAL;
         headerPanel.add(techRow, gc);
 
-        // 네 번째 줄: 권한단계 (경영관리만 표시)
+        // 권한단계 (경영관리만 표시)
         permissionRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 4, 0));
         permissionRow.setBackground(new Color(245, 248, 255));
         JLabel permKey = new JLabel("권한단계:");
@@ -133,11 +138,11 @@ public class EmployeeDetailPanel extends JPanel {
         projectTable = makeTable(projectModel);
         leaveTable   = makeTable(leaveModel);
         studyTable   = makeTable(studyModel);
-        tabs.addTab("경력",   new JScrollPane(careerTable));
         tabs.addTab("프로젝트", new JScrollPane(projectTable));
         tabs.addTab("휴가",   new JScrollPane(leaveTable));
         tabs.addTab("스터디", new JScrollPane(studyTable));
-        projectTabIndex = 1;
+        tabs.addTab("경력",   new JScrollPane(careerTable));
+        projectTabIndex = 0;
 
         // 더블클릭으로 해당 페이지 이동 + 항목 선택
         attachDoubleClickNav(projectTable, projectIds, "프로젝트", (mf, id) ->
@@ -197,7 +202,8 @@ public class EmployeeDetailPanel extends JPanel {
         nameLabel.setText(emp.getEmployeeName());
         gradeLabel.setText(emp.getGrade());
         deptLabel.setText(emp.getDepartment());
-        hireDateLabel.setText(emp.getHireDate() != null ? emp.getHireDate() : "-");
+        String hd = emp.getHireDate();
+        hireDateLabel.setText(hd != null ? hd.substring(0, Math.min(10, hd.length())) : "-");
         salaryLabel.setText(emp.getSalary() > 0 ? String.format("%,d원", emp.getSalary()) : "-");
 
         // 인사 기록 (가장 최근 승진일)
@@ -206,6 +212,17 @@ public class EmployeeDetailPanel extends JPanel {
             promotionLabel.setText(hr != null && hr.getPromotionDate() != null ? hr.getPromotionDate() : "-");
         } catch (Exception e) {
             promotionLabel.setText("-");
+        }
+
+        // 연차 현황
+        try {
+            int remaining = leaveDAO.getRemainingLeaveDays(emp.getId());
+            int used      = leaveDAO.getUsedAnnualLeaveDays(emp.getId());
+            leaveRemainingLabel.setText(remaining + "일");
+            leaveUsedLabel.setText(used + "일");
+        } catch (Exception e) {
+            leaveRemainingLabel.setText("-");
+            leaveUsedLabel.setText("-");
         }
 
         // 기술스택 (개발자만)

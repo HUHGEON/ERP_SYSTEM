@@ -4,6 +4,7 @@ import com.example.dao.CareerDAO;
 import com.example.dao.DeveloperDAO;
 import com.example.model.Career;
 import com.example.model.Developer;
+import com.example.util.ComboAutoComplete;
 import com.example.util.MaskingUtil;
 
 import javax.swing.*;
@@ -36,6 +37,7 @@ public class CareerDialog extends JDialog {
         } catch (Exception ex) {
             JOptionPane.showMessageDialog(this, "개발자 목록 로드 실패: " + ex.getMessage());
         }
+        ComboAutoComplete.apply(developerBox);
 
         JPanel form = new JPanel(new GridBagLayout());
         form.setBorder(BorderFactory.createEmptyBorder(15, 20, 10, 20));

@@ -20,7 +20,7 @@ import java.sql.PreparedStatement;
 import java.util.*;
 import java.util.List;
 
-public class EvaluationPanel extends JPanel {
+public class EvaluationPanel extends JPanel implements Refreshable {
 
     private static final String[] PROJECT_COLS = {"프로젝트명", "고객사", "상태"};
     private static final String[] PARTNER_COLS = {"동료명", "평균 평점", "평가 건수"};
@@ -71,7 +71,14 @@ public class EvaluationPanel extends JPanel {
         setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
         configTable(projectTable);
+        projectTable.getColumnModel().getColumn(0).setPreferredWidth(160);  // 프로젝트명
+        projectTable.getColumnModel().getColumn(1).setPreferredWidth(100);  // 고객사
+        projectTable.getColumnModel().getColumn(2).setPreferredWidth(60);   // 상태
+
         configTable(partnerListTable);
+        partnerListTable.getColumnModel().getColumn(0).setPreferredWidth(110);  // 동료명
+        partnerListTable.getColumnModel().getColumn(1).setPreferredWidth(70);   // 평균 평점
+        partnerListTable.getColumnModel().getColumn(2).setPreferredWidth(60);   // 평가 건수
 
         // 프로젝트 목록
         JLabel title = new JLabel("프로젝트 목록");
@@ -97,7 +104,7 @@ public class EvaluationPanel extends JPanel {
         // 프로젝트 선택 이벤트
         projectTable.getSelectionModel().addListSelectionListener(e -> {
             if (!e.getValueIsAdjusting() && projectTable.getSelectedRow() >= 0) {
-                Project p = projectList.get(projectTable.getSelectedRow());
+                Project p = projectList.get(projectTable.convertRowIndexToModel(projectTable.getSelectedRow()));
                 currentProjectId  = p.getId();
                 currentCustomerId = p.getCustomerId();
                 loadMyParticipation();
@@ -108,13 +115,15 @@ public class EvaluationPanel extends JPanel {
         // 동료 선택 이벤트
         partnerListTable.getSelectionModel().addListSelectionListener(e -> {
             if (!e.getValueIsAdjusting() && partnerListTable.getSelectedRow() >= 0) {
-                EvaluatorSummary s = partnerSummaryList.get(partnerListTable.getSelectedRow());
+                EvaluatorSummary s = partnerSummaryList.get(partnerListTable.convertRowIndexToModel(partnerListTable.getSelectedRow()));
                 loadPartnerCards(s);
             }
         });
 
         loadProjects();
     }
+
+    @Override public void refresh() { loadProjects(); }
 
     // ── 탭 빌더 ──
 
@@ -216,7 +225,7 @@ public class EvaluationPanel extends JPanel {
                 parent, type, currentProjectId, currentCustomerId, isAdmin, myParticipation);
         dialog.setVisible(true);
         if (dialog.isSaved()) {
-            Project p = projectList.get(projectTable.getSelectedRow());
+            Project p = projectList.get(projectTable.convertRowIndexToModel(projectTable.getSelectedRow()));
             onProjectSelected(p);
         }
     }
@@ -226,7 +235,7 @@ public class EvaluationPanel extends JPanel {
     private void loadProjects() {
         try {
             projectList = isAdmin
-                ? projectDAO.getAll()
+                ? projectDAO.search("", "완료")
                 : projectDAO.getCompletedByEmployeeId(myId);
             projectModel.setRowCount(0);
             for (Project p : projectList)
@@ -462,7 +471,7 @@ public class EvaluationPanel extends JPanel {
         }
         // 현재 프로젝트 뷰 갱신
         if (projectTable.getSelectedRow() >= 0) {
-            Project p = projectList.get(projectTable.getSelectedRow());
+            Project p = projectList.get(projectTable.convertRowIndexToModel(projectTable.getSelectedRow()));
             onProjectSelected(p);
         }
     }

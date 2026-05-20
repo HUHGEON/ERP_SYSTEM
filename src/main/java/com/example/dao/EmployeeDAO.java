@@ -5,6 +5,8 @@ import com.example.model.Position;
 import com.example.util.MaskingUtil;
 
 import java.sql.*;
+import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -140,5 +142,61 @@ public class EmployeeDAO {
             ps.setInt(1, id);
             ps.executeUpdate();
         }
+    }
+
+    /**
+     * 모든 직원의 position_id를 (이전 경력 일수 합산 + 입사 이후 근무일) 기준으로 일괄 재계산.
+     * 앱 시작 시 호출하여 기존 데이터도 올바른 직급을 갖도록 함.
+     */
+    public void recalcAllPositions(List<Position> positions) throws SQLException {
+        if (positions.isEmpty()) return;
+
+        // 직원별 이전 경력 일수 합산
+        String careerSql =
+            "SELECT e.id, e.hire_date, " +
+            "COALESCE(SUM(DATEDIFF(c.end_time, c.start_time)), 0) AS career_days " +
+            "FROM employee e " +
+            "LEFT JOIN career c ON e.id = c.employee_id " +
+            "GROUP BY e.id, e.hire_date";
+
+        try (Connection conn = DatabaseConnection.getConnection();
+             Statement st = conn.createStatement();
+             ResultSet rs = st.executeQuery(careerSql);
+             PreparedStatement upd = conn.prepareStatement(
+                 "UPDATE employee SET position_id=? WHERE id=? AND position_id<>?")) {
+
+            while (rs.next()) {
+                int    empId      = rs.getInt("id");
+                String hireDate   = rs.getString("hire_date");
+                long   totalDays  = rs.getLong("career_days");
+
+                try {
+                    String hd = hireDate != null ? hireDate.substring(0, 10) : "";
+                    long sinceDays = ChronoUnit.DAYS.between(LocalDate.parse(hd), LocalDate.now());
+                    if (sinceDays > 0) totalDays += sinceDays;
+                } catch (Exception ignored) {}
+
+                Position pos = calcPositionFor(positions, totalDays);
+                if (pos == null) continue;
+
+                upd.setInt(1, pos.getId());
+                upd.setInt(2, empId);
+                upd.setInt(3, pos.getId());
+                upd.addBatch();
+            }
+            upd.executeBatch();
+        }
+    }
+
+    private static Position calcPositionFor(List<Position> positions, long totalDays) {
+        if (positions.isEmpty()) return null;
+        long years = totalDays / 365;
+        int idx;
+        if      (years < 2) idx = 0;
+        else if (years < 4) idx = 1;
+        else if (years < 6) idx = 2;
+        else if (years < 8) idx = 3;
+        else                idx = positions.size() - 1;
+        return positions.get(Math.min(idx, positions.size() - 1));
     }
 }

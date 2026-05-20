@@ -36,6 +36,9 @@ public class ManagementPanel extends JPanel {
         table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         table.getTableHeader().setReorderingAllowed(false);
         table.setRowHeight(24);
+        table.getColumnModel().getColumn(0).setPreferredWidth(45);   // ID
+        table.getColumnModel().getColumn(1).setPreferredWidth(100);  // 직원명
+        table.getColumnModel().getColumn(2).setPreferredWidth(70);   // 권한단계
 
         JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
         JButton addBtn = new JButton("추가");
@@ -53,7 +56,7 @@ public class ManagementPanel extends JPanel {
         editBtn.addActionListener(e -> {
             int row = table.getSelectedRow();
             if (row < 0) { JOptionPane.showMessageDialog(this, "수정할 항목을 선택하세요."); return; }
-            openDialog(currentList.get(row));
+            openDialog(currentList.get(table.convertRowIndexToModel(row)));
         });
         deleteBtn.addActionListener(e -> deleteSelected());
         loadData();
@@ -77,7 +80,7 @@ public class ManagementPanel extends JPanel {
     private void deleteSelected() {
         int row = table.getSelectedRow();
         if (row < 0) { JOptionPane.showMessageDialog(this, "삭제할 항목을 선택하세요."); return; }
-        Management m = currentList.get(row);
+        Management m = currentList.get(table.convertRowIndexToModel(row));
         if (JOptionPane.showConfirmDialog(this, "'" + m.getEmployeeName() + "' 경영관리 정보를 삭제하시겠습니까?",
                 "삭제 확인", JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION) {
             try { dao.delete(m.getId()); loadData(); }

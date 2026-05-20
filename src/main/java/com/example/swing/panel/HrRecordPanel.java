@@ -11,7 +11,7 @@ import java.awt.*;
 import java.util.ArrayList;
 import java.util.List;
 
-public class HrRecordPanel extends JPanel {
+public class HrRecordPanel extends JPanel implements Refreshable {
 
     private static final String[] COLUMNS = {"ID", "직원명", "직급", "승진일"};
 
@@ -39,6 +39,10 @@ public class HrRecordPanel extends JPanel {
         table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         table.getTableHeader().setReorderingAllowed(false);
         table.setRowHeight(24);
+        table.getColumnModel().getColumn(0).setPreferredWidth(45);   // ID
+        table.getColumnModel().getColumn(1).setPreferredWidth(90);   // 직원명
+        table.getColumnModel().getColumn(2).setPreferredWidth(65);   // 직급
+        table.getColumnModel().getColumn(3).setPreferredWidth(90);   // 승진일
 
         JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
         JButton addBtn = new JButton("추가"); JButton editBtn = new JButton("수정"); JButton deleteBtn = new JButton("삭제");
@@ -49,7 +53,6 @@ public class HrRecordPanel extends JPanel {
         add(btnPanel, BorderLayout.SOUTH);
 
         if (!isAdmin) {
-            searchPanel.setVisible(false);
             addBtn.setVisible(false);
             editBtn.setVisible(false);
             deleteBtn.setVisible(false);
@@ -61,11 +64,13 @@ public class HrRecordPanel extends JPanel {
         editBtn.addActionListener(e -> {
             int row = table.getSelectedRow();
             if (row < 0) { JOptionPane.showMessageDialog(this, "수정할 인사기록을 선택하세요."); return; }
-            openDialog(currentList.get(row));
+            openDialog(currentList.get(table.convertRowIndexToModel(row)));
         });
         deleteBtn.addActionListener(e -> deleteSelected());
         loadData();
     }
+
+    @Override public void refresh() { loadData(); }
 
     private void loadData() {
         try {
@@ -92,7 +97,7 @@ public class HrRecordPanel extends JPanel {
     private void deleteSelected() {
         int row = table.getSelectedRow();
         if (row < 0) { JOptionPane.showMessageDialog(this, "삭제할 인사기록을 선택하세요."); return; }
-        HrRecord h = currentList.get(row);
+        HrRecord h = currentList.get(table.convertRowIndexToModel(row));
         if (JOptionPane.showConfirmDialog(this, "해당 인사기록을 삭제하시겠습니까?", "삭제 확인", JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION) {
             try { dao.delete(h.getId()); loadData(); }
             catch (Exception ex) { JOptionPane.showMessageDialog(this, "삭제 오류: " + ex.getMessage(), "오류", JOptionPane.ERROR_MESSAGE); }

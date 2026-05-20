@@ -45,6 +45,8 @@ public class PmEvaluationPanel extends JPanel {
         table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         table.getTableHeader().setReorderingAllowed(false);
         table.setRowHeight(24);
+        table.getColumnModel().getColumn(0).setPreferredWidth(120);  // PM명
+        table.getColumnModel().getColumn(1).setPreferredWidth(80);   // 평가유형
 
         JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
         JButton addBtn = new JButton("추가"); JButton editBtn = new JButton("수정"); JButton deleteBtn = new JButton("삭제");
@@ -58,6 +60,8 @@ public class PmEvaluationPanel extends JPanel {
         itemTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         itemTable.getTableHeader().setReorderingAllowed(false);
         itemTable.setRowHeight(24);
+        itemTable.getColumnModel().getColumn(0).setPreferredWidth(50);   // 평점
+        itemTable.getColumnModel().getColumn(1).setPreferredWidth(250);  // 평가내용
 
         itemLabel.setBorder(BorderFactory.createEmptyBorder(4, 4, 2, 0));
         itemLabel.setFont(itemLabel.getFont().deriveFont(Font.BOLD));
@@ -77,14 +81,14 @@ public class PmEvaluationPanel extends JPanel {
         editBtn.addActionListener(e -> {
             int row = table.getSelectedRow();
             if (row < 0) { JOptionPane.showMessageDialog(this, "수정할 항목을 선택하세요."); return; }
-            openDialog(currentList.get(row));
+            openDialog(currentList.get(table.convertRowIndexToModel(row)));
         });
         deleteBtn.addActionListener(e -> deleteSelected());
 
         table.getSelectionModel().addListSelectionListener(e -> {
             if (!e.getValueIsAdjusting()) {
                 int row = table.getSelectedRow();
-                if (row >= 0) loadItems(currentList.get(row));
+                if (row >= 0) loadItems(currentList.get(table.convertRowIndexToModel(row)));
             }
         });
 
@@ -126,7 +130,7 @@ public class PmEvaluationPanel extends JPanel {
     private void deleteSelected() {
         int row = table.getSelectedRow();
         if (row < 0) { JOptionPane.showMessageDialog(this, "삭제할 항목을 선택하세요."); return; }
-        PmEvaluation pe = currentList.get(row);
+        PmEvaluation pe = currentList.get(table.convertRowIndexToModel(row));
         if (JOptionPane.showConfirmDialog(this, "해당 PM 평가를 삭제하시겠습니까?",
                 "삭제 확인", JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION) {
             try { dao.delete(pe.getId()); loadData(); }

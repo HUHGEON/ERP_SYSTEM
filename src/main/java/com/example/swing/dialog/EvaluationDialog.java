@@ -2,6 +2,7 @@ package com.example.swing.dialog;
 
 import com.example.dao.EvaluationDAO;
 import com.example.dao.ProjectParticipationDAO;
+import com.example.util.ComboAutoComplete;
 import com.example.model.Evaluation;
 import com.example.model.ProjectParticipation;
 
@@ -30,6 +31,7 @@ public class EvaluationDialog extends JDialog {
             List<ProjectParticipation> pps = new ProjectParticipationDAO().getAllParticipations();
             for (ProjectParticipation pp : pps) participationBox.addItem(pp);
         } catch (Exception ex) { JOptionPane.showMessageDialog(this, "프로젝트 투입 목록 로드 실패: " + ex.getMessage()); }
+        ComboAutoComplete.apply(participationBox);
 
         JPanel form = new JPanel(new GridBagLayout());
         form.setBorder(BorderFactory.createEmptyBorder(15, 20, 10, 20));
