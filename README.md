@@ -88,9 +88,9 @@ mysql -u root -p
 ```
 
 ```sql
-CREATE DATABASE cmm CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-CREATE USER 'ureca'@'localhost' IDENTIFIED BY 'ureca';
-GRANT ALL PRIVILEGES ON cmm.* TO 'ureca'@'localhost';
+CREATE DATABASE {{DB_NAME}} CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE USER '{{USER_NAME}}'@'{{HOST}}' IDENTIFIED BY '{{PASSWORD}}';
+GRANT ALL PRIVILEGES ON {{DB_NAME}}.* TO '{{USER_NAME}}'@'{{HOST}}';
 FLUSH PRIVILEGES;
 ```
 
