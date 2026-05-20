@@ -16,7 +16,7 @@ import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.util.List;
 
-public class StudyPanel extends JPanel {
+public class StudyPanel extends JPanel implements Refreshable {
 
     private static final String[] STUDY_COLS  = {"스터디명", "카테고리"};
     private static final String[] MEMBER_COLS = {"참여 직원"};
@@ -80,6 +80,8 @@ public class StudyPanel extends JPanel {
         studyTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         studyTable.getTableHeader().setReorderingAllowed(false);
         studyTable.setRowHeight(24);
+        studyTable.getColumnModel().getColumn(0).setPreferredWidth(160);  // 스터디명
+        studyTable.getColumnModel().getColumn(1).setPreferredWidth(80);   // 카테고리
 
         JPanel studyBtnPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
         JButton addStudyBtn    = new JButton("추가");
@@ -158,7 +160,6 @@ public class StudyPanel extends JPanel {
 
         // ── 권한 제어 ─────────────────────────────────────────────
         if (!isAdmin) {
-            searchPanel.setVisible(false);
             addStudyBtn.setVisible(false);
             editStudyBtn.setVisible(false);
             deleteStudyBtn.setVisible(false);
@@ -173,7 +174,7 @@ public class StudyPanel extends JPanel {
         editStudyBtn.addActionListener(e -> {
             int row = studyTable.getSelectedRow();
             if (row < 0) { info("수정할 스터디를 선택하세요."); return; }
-            openStudyDialog(studyList.get(row));
+            openStudyDialog(studyList.get(studyTable.convertRowIndexToModel(row)));
         });
         deleteStudyBtn.addActionListener(e -> deleteStudy());
 
@@ -181,7 +182,7 @@ public class StudyPanel extends JPanel {
             if (!e.getValueIsAdjusting()) {
                 int row = studyTable.getSelectedRow();
                 if (row >= 0) {
-                    Study s = studyList.get(row);
+                    Study s = studyList.get(studyTable.convertRowIndexToModel(row));
                     selectedStudyId = s.getId();
                     activityTitleLbl.setText("활동 기록 — " + s.getStudyName());
                     loadMembers();
@@ -191,9 +192,8 @@ public class StudyPanel extends JPanel {
         });
 
         addMemberBtn.addActionListener(e -> {
-            if (selectedStudyId < 0) { info("스터디를 먼저 선택하세요."); return; }
             JFrame frame = (JFrame) SwingUtilities.getWindowAncestor(this);
-            StudyParticipationDialog dialog = new StudyParticipationDialog(frame, null, spDAO);
+            StudyParticipationDialog dialog = new StudyParticipationDialog(frame, null, spDAO, selectedStudyId);
             dialog.setVisible(true);
             if (dialog.isSaved()) loadMembers();
         });
@@ -211,6 +211,8 @@ public class StudyPanel extends JPanel {
 
         loadStudies();
     }
+
+    @Override public void refresh() { loadStudies(); }
 
     // ── 데이터 로드 ───────────────────────────────────────────────
     private void loadStudies() {
@@ -275,7 +277,7 @@ public class StudyPanel extends JPanel {
             )
         ));
         card.setAlignmentX(Component.LEFT_ALIGNMENT);
-        card.setMaximumSize(new Dimension(Integer.MAX_VALUE, Integer.MAX_VALUE));
+        card.setMaximumSize(new Dimension(Integer.MAX_VALUE, 50));
 
         JLabel dateLbl = new JLabel(h.getActivityDate() != null ? h.getActivityDate() : "");
         dateLbl.setFont(new Font("SansSerif", Font.BOLD, 10));
@@ -305,7 +307,7 @@ public class StudyPanel extends JPanel {
     private void deleteStudy() {
         int row = studyTable.getSelectedRow();
         if (row < 0) { info("삭제할 스터디를 선택하세요."); return; }
-        Study s = studyList.get(row);
+        Study s = studyList.get(studyTable.convertRowIndexToModel(row));
         if (JOptionPane.showConfirmDialog(this, "'" + s.getStudyName() + "' 스터디를 삭제하시겠습니까?",
                 "삭제 확인", JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION) {
             try { studyDAO.delete(s.getId()); loadStudies(); }
@@ -316,7 +318,7 @@ public class StudyPanel extends JPanel {
     private void deleteMember() {
         int row = memberTable.getSelectedRow();
         if (row < 0) { info("제거할 직원을 선택하세요."); return; }
-        StudyParticipation sp = memberList.get(row);
+        StudyParticipation sp = memberList.get(memberTable.convertRowIndexToModel(row));
         if (JOptionPane.showConfirmDialog(this, "'" + sp.getEmployeeName() + "' 직원을 스터디에서 제거하시겠습니까?",
                 "삭제 확인", JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION) {
             try { spDAO.delete(sp.getId()); loadMembers(); }
@@ -340,8 +342,9 @@ public class StudyPanel extends JPanel {
         if (studyList == null) return false;
         for (int i = 0; i < studyList.size(); i++) {
             if (studyList.get(i).getId() == studyId) {
-                studyTable.setRowSelectionInterval(i, i);
-                studyTable.scrollRectToVisible(studyTable.getCellRect(i, 0, true));
+                int viewRow = studyTable.convertRowIndexToView(i);
+                studyTable.setRowSelectionInterval(viewRow, viewRow);
+                studyTable.scrollRectToVisible(studyTable.getCellRect(viewRow, 0, true));
                 return true;
             }
         }

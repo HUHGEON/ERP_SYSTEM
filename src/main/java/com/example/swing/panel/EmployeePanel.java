@@ -12,7 +12,7 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.List;
 
-public class EmployeePanel extends JPanel {
+public class EmployeePanel extends JPanel implements Refreshable {
 
     private static final String[] GRADES = {"", "사원", "대리", "과장", "부장", "이사"};
     private static final String[] DEPARTMENTS = {"", "개발자", "마케팅", "경영관리", "연구개발"};
@@ -58,6 +58,14 @@ public class EmployeePanel extends JPanel {
         table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         table.getTableHeader().setReorderingAllowed(false);
         table.setRowHeight(24);
+        table.getColumnModel().getColumn(0).setPreferredWidth(45);   // ID
+        table.getColumnModel().getColumn(1).setPreferredWidth(80);   // 이름
+        table.getColumnModel().getColumn(2).setPreferredWidth(65);   // 직급
+        table.getColumnModel().getColumn(3).setPreferredWidth(80);   // 부서
+        table.getColumnModel().getColumn(4).setPreferredWidth(110);  // 전화번호
+        table.getColumnModel().getColumn(5).setPreferredWidth(160);  // 이메일
+        table.getColumnModel().getColumn(6).setPreferredWidth(110);  // 주민번호
+        table.getColumnModel().getColumn(7).setPreferredWidth(70);   // 학력
 
         JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
         JButton addBtn = new JButton("추가");
@@ -85,7 +93,6 @@ public class EmployeePanel extends JPanel {
         add(splitPane, BorderLayout.CENTER);
 
         if (!isAdmin) {
-            searchPanel.setVisible(false);
             addBtn.setVisible(false);
             editBtn.setVisible(false);
             deleteBtn.setVisible(false);
@@ -103,7 +110,7 @@ public class EmployeePanel extends JPanel {
         editBtn.addActionListener(e -> {
             int row = table.getSelectedRow();
             if (row < 0) { showInfo("수정할 직원을 선택하세요."); return; }
-            openDialog(currentList.get(row));
+            openDialog(currentList.get(table.convertRowIndexToModel(row)));
         });
         deleteBtn.addActionListener(e -> deleteSelected());
 
@@ -112,7 +119,7 @@ public class EmployeePanel extends JPanel {
             if (!e.getValueIsAdjusting()) {
                 int row = table.getSelectedRow();
                 if (row >= 0) {
-                    detailPanel.loadEmployee(currentList.get(row));
+                    detailPanel.loadEmployee(currentList.get(table.convertRowIndexToModel(row)));
                     detailShowing = true;
                     splitPane.setDividerLocation(0.55);
                 } else {
@@ -145,6 +152,8 @@ public class EmployeePanel extends JPanel {
         loadData();
     }
 
+    @Override public void refresh() { loadData(); }
+
     private void loadData() {
         try {
             currentList = isAdmin
@@ -175,7 +184,7 @@ public class EmployeePanel extends JPanel {
     private void deleteSelected() {
         int row = table.getSelectedRow();
         if (row < 0) { showInfo("삭제할 직원을 선택하세요."); return; }
-        Employee emp = currentList.get(row);
+        Employee emp = currentList.get(table.convertRowIndexToModel(row));
         int confirm = JOptionPane.showConfirmDialog(this,
             "'" + emp.getEmployeeName() + "' 직원을 삭제하시겠습니까?",
             "삭제 확인", JOptionPane.YES_NO_OPTION);

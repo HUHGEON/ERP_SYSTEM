@@ -19,7 +19,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-public class ProjectPanel extends JPanel {
+public class ProjectPanel extends JPanel implements Refreshable {
 
     private static final String[] STATUSES   = {"", "진행중", "완료"};
     private static final String[] PROJ_COLS  = {"ID", "프로젝트명", "발주처", "시작일", "종료일", "상태"};
@@ -56,6 +56,7 @@ public class ProjectPanel extends JPanel {
     private List<Output>               outputList;
     private List<ProjectParticipation> memberList;
     private int selectedProjectId = -1;
+    private Project selectedProject = null;
 
     public ProjectPanel() {
         setLayout(new BorderLayout(5, 5));
@@ -75,6 +76,12 @@ public class ProjectPanel extends JPanel {
         projectTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         projectTable.getTableHeader().setReorderingAllowed(false);
         projectTable.setRowHeight(24);
+        projectTable.getColumnModel().getColumn(0).setPreferredWidth(45);   // ID
+        projectTable.getColumnModel().getColumn(1).setPreferredWidth(160);  // 프로젝트명
+        projectTable.getColumnModel().getColumn(2).setPreferredWidth(100);  // 발주처
+        projectTable.getColumnModel().getColumn(3).setPreferredWidth(90);   // 시작일
+        projectTable.getColumnModel().getColumn(4).setPreferredWidth(90);   // 종료일
+        projectTable.getColumnModel().getColumn(5).setPreferredWidth(60);   // 상태
 
         JPanel projBtnPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
         JButton addProjBtn    = new JButton("추가");
@@ -93,6 +100,10 @@ public class ProjectPanel extends JPanel {
         memberTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         memberTable.getTableHeader().setReorderingAllowed(false);
         memberTable.setRowHeight(24);
+        memberTable.getColumnModel().getColumn(0).setPreferredWidth(80);   // 이름
+        memberTable.getColumnModel().getColumn(1).setPreferredWidth(80);   // 역할
+        memberTable.getColumnModel().getColumn(2).setPreferredWidth(90);   // 투입일
+        memberTable.getColumnModel().getColumn(3).setPreferredWidth(90);   // 종료일
 
         memberLabel.setBorder(BorderFactory.createEmptyBorder(4, 4, 2, 0));
         memberLabel.setFont(memberLabel.getFont().deriveFont(Font.BOLD));
@@ -114,6 +125,9 @@ public class ProjectPanel extends JPanel {
         outputTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         outputTable.getTableHeader().setReorderingAllowed(false);
         outputTable.setRowHeight(24);
+        outputTable.getColumnModel().getColumn(0).setPreferredWidth(45);   // ID
+        outputTable.getColumnModel().getColumn(1).setPreferredWidth(90);   // 산출물 유형
+        outputTable.getColumnModel().getColumn(2).setPreferredWidth(160);  // 산출물명
 
         JPanel outBtnPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
         JButton addOutBtn    = new JButton("산출물 추가");
@@ -145,7 +159,6 @@ public class ProjectPanel extends JPanel {
 
         // 비관리자는 검색/추가/수정/삭제 숨김 (본인 참여 프로젝트만 조회)
         if (!isAdmin) {
-            searchPanel.setVisible(false);
             addProjBtn.setVisible(false);
             editProjBtn.setVisible(false);
             deleteProjBtn.setVisible(false);
@@ -165,7 +178,7 @@ public class ProjectPanel extends JPanel {
         editProjBtn.addActionListener(e -> {
             int row = projectTable.getSelectedRow();
             if (row < 0) { info("수정할 프로젝트를 선택하세요."); return; }
-            openProjectDialog(projectList.get(row));
+            openProjectDialog(projectList.get(projectTable.convertRowIndexToModel(row)));
         });
         deleteProjBtn.addActionListener(e -> deleteProject());
 
@@ -173,8 +186,9 @@ public class ProjectPanel extends JPanel {
             if (!e.getValueIsAdjusting()) {
                 int row = projectTable.getSelectedRow();
                 if (row >= 0) {
-                    Project p = projectList.get(row);
+                    Project p = projectList.get(projectTable.convertRowIndexToModel(row));
                     selectedProjectId = p.getId();
+                    selectedProject = p;
                     memberLabel.setText("투입 팀원 — " + p.getProjectName());
                     outputLabel.setText("산출물 — " + p.getProjectName());
                     loadMembers();
@@ -184,13 +198,15 @@ public class ProjectPanel extends JPanel {
         });
 
         addMemBtn.addActionListener(e -> {
-            if (selectedProjectId < 0) { info("프로젝트를 먼저 선택하세요."); return; }
-            openParticipationDialog(null);
+            if (selectedProject != null && selectedProject.getEndDate() != null && !selectedProject.getEndDate().isEmpty()) {
+                info("완료된 프로젝트에는 인원을 투입할 수 없습니다."); return;
+            }
+            openParticipationDialog(null, selectedProjectId);
         });
         editMemBtn.addActionListener(e -> {
             int row = memberTable.getSelectedRow();
             if (row < 0) { info("수정할 투입 인원을 선택하세요."); return; }
-            openParticipationDialog(memberList.get(row));
+            openParticipationDialog(memberList.get(memberTable.convertRowIndexToModel(row)), selectedProjectId);
         });
         deleteMemBtn.addActionListener(e -> deleteMember());
 
@@ -201,12 +217,14 @@ public class ProjectPanel extends JPanel {
         editOutBtn.addActionListener(e -> {
             int row = outputTable.getSelectedRow();
             if (row < 0) { info("수정할 산출물을 선택하세요."); return; }
-            openOutputDialog(outputList.get(row));
+            openOutputDialog(outputList.get(outputTable.convertRowIndexToModel(row)));
         });
         deleteOutBtn.addActionListener(e -> deleteOutput());
 
         loadProjects();
     }
+
+    @Override public void refresh() { loadProjects(); }
 
     private void loadProjects() {
         try {
@@ -227,6 +245,7 @@ public class ProjectPanel extends JPanel {
                 });
             }
             selectedProjectId = -1;
+            selectedProject = null;
             memberModel.setRowCount(0);
             outputModel.setRowCount(0);
             memberLabel.setText("투입 팀원 — 프로젝트를 선택하세요");
@@ -263,9 +282,9 @@ public class ProjectPanel extends JPanel {
         if (dialog.isSaved()) loadProjects();
     }
 
-    private void openParticipationDialog(ProjectParticipation pp) {
+    private void openParticipationDialog(ProjectParticipation pp, int preselectedProjectId) {
         JFrame frame = (JFrame) SwingUtilities.getWindowAncestor(this);
-        ProjectParticipationDialog dialog = new ProjectParticipationDialog(frame, pp, participationDAO);
+        ProjectParticipationDialog dialog = new ProjectParticipationDialog(frame, pp, participationDAO, preselectedProjectId);
         dialog.setVisible(true);
         if (dialog.isSaved()) loadMembers();
     }
@@ -280,7 +299,7 @@ public class ProjectPanel extends JPanel {
     private void deleteProject() {
         int row = projectTable.getSelectedRow();
         if (row < 0) { info("삭제할 프로젝트를 선택하세요."); return; }
-        Project p = projectList.get(row);
+        Project p = projectList.get(projectTable.convertRowIndexToModel(row));
         if (JOptionPane.showConfirmDialog(this, "'" + p.getProjectName() + "' 프로젝트를 삭제하시겠습니까?",
                 "삭제 확인", JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION) {
             try { projectDAO.delete(p.getId()); loadProjects(); }
@@ -291,7 +310,7 @@ public class ProjectPanel extends JPanel {
     private void deleteMember() {
         int row = memberTable.getSelectedRow();
         if (row < 0) { info("삭제할 투입 인원을 선택하세요."); return; }
-        ProjectParticipation pp = memberList.get(row);
+        ProjectParticipation pp = memberList.get(memberTable.convertRowIndexToModel(row));
         if (JOptionPane.showConfirmDialog(this, "'" + pp.getDeveloperName() + "' 투입 기록을 삭제하시겠습니까?",
                 "삭제 확인", JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION) {
             try { participationDAO.delete(pp.getId()); loadMembers(); }
@@ -302,7 +321,7 @@ public class ProjectPanel extends JPanel {
     private void deleteOutput() {
         int row = outputTable.getSelectedRow();
         if (row < 0) { info("삭제할 산출물을 선택하세요."); return; }
-        Output o = outputList.get(row);
+        Output o = outputList.get(outputTable.convertRowIndexToModel(row));
         if (JOptionPane.showConfirmDialog(this, "'" + o.getOutputName() + "' 산출물을 삭제하시겠습니까?",
                 "삭제 확인", JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION) {
             try { outputDAO.delete(o.getId()); loadOutputs(); }
@@ -324,8 +343,9 @@ public class ProjectPanel extends JPanel {
         if (projectList == null) return false;
         for (int i = 0; i < projectList.size(); i++) {
             if (projectList.get(i).getId() == projectId) {
-                projectTable.setRowSelectionInterval(i, i);
-                projectTable.scrollRectToVisible(projectTable.getCellRect(i, 0, true));
+                int viewRow = projectTable.convertRowIndexToView(i);
+                projectTable.setRowSelectionInterval(viewRow, viewRow);
+                projectTable.scrollRectToVisible(projectTable.getCellRect(viewRow, 0, true));
                 return true;
             }
         }

@@ -11,7 +11,7 @@ import java.awt.*;
 import java.time.LocalDate;
 import java.util.List;
 
-public class LeavePanel extends JPanel {
+public class LeavePanel extends JPanel implements Refreshable {
 
     private static final String[] LEAVE_TYPES = {"", "연가", "공가"};
     private static final String[] COLUMNS = {"ID", "직원 이름", "휴가 종류", "시작일", "종료일"};
@@ -46,6 +46,11 @@ public class LeavePanel extends JPanel {
         table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         table.getTableHeader().setReorderingAllowed(false);
         table.setRowHeight(24);
+        table.getColumnModel().getColumn(0).setPreferredWidth(45);   // ID
+        table.getColumnModel().getColumn(1).setPreferredWidth(90);   // 직원 이름
+        table.getColumnModel().getColumn(2).setPreferredWidth(70);   // 휴가 종류
+        table.getColumnModel().getColumn(3).setPreferredWidth(90);   // 시작일
+        table.getColumnModel().getColumn(4).setPreferredWidth(90);   // 종료일
 
         JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
         JButton addBtn = new JButton("추가");
@@ -59,9 +64,6 @@ public class LeavePanel extends JPanel {
         add(new JScrollPane(table), BorderLayout.CENTER);
         add(btnPanel, BorderLayout.SOUTH);
 
-        if (!isAdmin) {
-            searchPanel.setVisible(false);
-        }
 
         searchBtn.addActionListener(e -> loadData());
         resetBtn.addActionListener(e -> {
@@ -73,7 +75,7 @@ public class LeavePanel extends JPanel {
         editBtn.addActionListener(e -> {
             int row = table.getSelectedRow();
             if (row < 0) { showInfo("수정할 휴가 기록을 선택하세요."); return; }
-            LeaveRecord lr = currentList.get(row);
+            LeaveRecord lr = currentList.get(table.convertRowIndexToModel(row));
             if (!isAdmin && lr.getEndDate() != null && lr.getEndDate().compareTo(LocalDate.now().toString()) < 0) {
                 showInfo("이미 지난 연가에 대한 관리는 관리자에게 문의해 주세요.");
                 return;
@@ -84,6 +86,8 @@ public class LeavePanel extends JPanel {
 
         loadData();
     }
+
+    @Override public void refresh() { loadData(); }
 
     private void loadData() {
         try {
@@ -112,7 +116,7 @@ public class LeavePanel extends JPanel {
     private void deleteSelected() {
         int row = table.getSelectedRow();
         if (row < 0) { showInfo("삭제할 휴가 기록을 선택하세요."); return; }
-        LeaveRecord lr = currentList.get(row);
+        LeaveRecord lr = currentList.get(table.convertRowIndexToModel(row));
         int confirm = JOptionPane.showConfirmDialog(this,
             lr.getEmployeeName() + "의 휴가 기록을 삭제하시겠습니까?",
             "삭제 확인", JOptionPane.YES_NO_OPTION);
@@ -142,8 +146,9 @@ public class LeavePanel extends JPanel {
         if (currentList == null) return false;
         for (int i = 0; i < currentList.size(); i++) {
             if (currentList.get(i).getId() == leaveId) {
-                table.setRowSelectionInterval(i, i);
-                table.scrollRectToVisible(table.getCellRect(i, 0, true));
+                int viewRow = table.convertRowIndexToView(i);
+                table.setRowSelectionInterval(viewRow, viewRow);
+                table.scrollRectToVisible(table.getCellRect(viewRow, 0, true));
                 return true;
             }
         }

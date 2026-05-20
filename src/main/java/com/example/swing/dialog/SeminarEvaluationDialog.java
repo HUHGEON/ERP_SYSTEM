@@ -1,23 +1,31 @@
 package com.example.swing.dialog;
 
 import com.example.dao.EmployeeDAO;
+import com.example.dao.SeminarDAO;
 import com.example.dao.SeminarEvaluationDAO;
+import com.example.dao.SeminarParticipationDAO;
 import com.example.model.Employee;
+import com.example.model.Seminar;
 import com.example.model.SeminarEvaluation;
+import com.example.model.SeminarParticipation;
+import com.example.util.ComboAutoComplete;
 
 import javax.swing.*;
 import java.awt.*;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 public class SeminarEvaluationDialog extends JDialog {
 
     private final JTextField idField      = new JTextField(10);
+    private final JComboBox<Seminar>  seminarBox  = new JComboBox<>();
     private final JComboBox<Employee> employeeBox = new JComboBox<>();
     private final JTextField ratingField  = new JTextField(6);
     private final JTextArea commentArea   = new JTextArea(4, 25);
 
     private final SeminarEvaluationDAO dao;
-    private final int seminarId;
+    private int seminarId;
     private boolean saved = false;
     private final boolean isEdit;
 
@@ -27,12 +35,33 @@ public class SeminarEvaluationDialog extends JDialog {
         this.seminarId = seminarId;
         this.isEdit = eval != null;
 
+        if (seminarId < 0) {
+            try {
+                List<Seminar> seminars = new SeminarDAO().search("", "");
+                for (Seminar s : seminars) seminarBox.addItem(s);
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(this, "세미나 목록 로드 실패: " + ex.getMessage());
+            }
+            ComboAutoComplete.apply(seminarBox);
+        }
+
         try {
             List<Employee> employees = new EmployeeDAO().search("", "", "");
+            if (seminarId >= 0) {
+                Set<Integer> participantIds = new SeminarParticipationDAO()
+                    .searchBySeminarId(seminarId).stream()
+                    .map(SeminarParticipation::getEmployeeId)
+                    .collect(Collectors.toSet());
+                employees = employees.stream()
+                    .filter(e -> participantIds.contains(e.getId()))
+                    .collect(Collectors.toList());
+            }
             for (Employee e : employees) employeeBox.addItem(e);
         } catch (Exception ex) {
             JOptionPane.showMessageDialog(this, "직원 목록 로드 실패: " + ex.getMessage());
         }
+
+        ComboAutoComplete.apply(employeeBox);
 
         commentArea.setLineWrap(true);
         commentArea.setWrapStyleWord(true);
@@ -42,11 +71,18 @@ public class SeminarEvaluationDialog extends JDialog {
         GridBagConstraints lc = lc(); GridBagConstraints fc = fc();
 
         idField.setEditable(false);
-        lc.gridy = 1; fc.gridy = 1; form.add(new JLabel("직원:"), lc); form.add(employeeBox, fc);
-        lc.gridy = 2; fc.gridy = 2; form.add(new JLabel("평점 (0.00~5.00):"), lc); form.add(ratingField, fc);
+        int row = 0;
+        if (seminarId < 0) {
+            lc.gridy = row; fc.gridy = row; form.add(new JLabel("세미나:"), lc); form.add(seminarBox, fc);
+            row++;
+        }
+        lc.gridy = row; fc.gridy = row; form.add(new JLabel("직원:"), lc); form.add(employeeBox, fc);
+        row++;
+        lc.gridy = row; fc.gridy = row; form.add(new JLabel("평점 (0.00~5.00):"), lc); form.add(ratingField, fc);
+        row++;
 
-        lc.gridy = 3; lc.anchor = GridBagConstraints.NORTHEAST;
-        fc.gridy = 3;
+        lc.gridy = row; lc.anchor = GridBagConstraints.NORTHEAST;
+        fc.gridy = row;
         form.add(new JLabel("코멘트:"), lc);
         form.add(new JScrollPane(commentArea), fc);
         lc.anchor = GridBagConstraints.EAST;
@@ -77,6 +113,11 @@ public class SeminarEvaluationDialog extends JDialog {
     }
 
     private void save() {
+        if (seminarId < 0) {
+            Seminar sel = (Seminar) seminarBox.getSelectedItem();
+            if (sel == null) { JOptionPane.showMessageDialog(this, "세미나를 선택하세요."); return; }
+            seminarId = sel.getId();
+        }
         if (employeeBox.getSelectedItem() == null) { JOptionPane.showMessageDialog(this, "직원을 선택하세요."); return; }
         String ratingStr = ratingField.getText().trim();
         if (ratingStr.isEmpty()) { JOptionPane.showMessageDialog(this, "평점을 입력하세요."); return; }

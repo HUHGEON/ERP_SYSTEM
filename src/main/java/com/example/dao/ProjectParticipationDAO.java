@@ -135,6 +135,19 @@ public class ProjectParticipationDAO {
         return list;
     }
 
+    public boolean isActivelyParticipating(int developerId, int excludeId) throws SQLException {
+        String sql = "SELECT COUNT(*) FROM project_participation WHERE developer_id = ? AND end_date IS NULL AND id != ?";
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, developerId);
+            ps.setInt(2, excludeId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) return rs.getInt(1) > 0;
+            }
+        }
+        return false;
+    }
+
     public int nextId() throws SQLException {
         try (Connection conn = DatabaseConnection.getConnection();
              Statement st = conn.createStatement();

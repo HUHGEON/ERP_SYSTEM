@@ -4,6 +4,7 @@ import com.example.dao.StudyActivityHistoryDAO;
 import com.example.dao.StudyDAO;
 import com.example.model.Study;
 import com.example.model.StudyActivityHistory;
+import com.example.util.ComboAutoComplete;
 import com.example.util.MaskingUtil;
 
 import javax.swing.*;
@@ -31,6 +32,7 @@ public class StudyActivityHistoryDialog extends JDialog {
             List<Study> studies = new StudyDAO().search("", "");
             for (Study s : studies) studyBox.addItem(s);
         } catch (Exception ex) { JOptionPane.showMessageDialog(this, "스터디 목록 로드 실패: " + ex.getMessage()); }
+        ComboAutoComplete.apply(studyBox);
 
         JPanel form = new JPanel(new GridBagLayout());
         form.setBorder(BorderFactory.createEmptyBorder(15, 20, 10, 20));

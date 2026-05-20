@@ -6,6 +6,7 @@ import com.example.dao.ProjectParticipationDAO;
 import com.example.model.Developer;
 import com.example.model.Project;
 import com.example.model.ProjectParticipation;
+import com.example.util.ComboAutoComplete;
 import com.example.util.MaskingUtil;
 
 import javax.swing.*;
@@ -29,12 +30,17 @@ public class ProjectParticipationDialog extends JDialog {
     private final boolean isEdit;
 
     public ProjectParticipationDialog(JFrame parent, ProjectParticipation pp, ProjectParticipationDAO dao) {
+        this(parent, pp, dao, -1);
+    }
+
+    public ProjectParticipationDialog(JFrame parent, ProjectParticipation pp, ProjectParticipationDAO dao, int preselectedProjectId) {
         super(parent, pp == null ? "프로젝트 투입 추가" : "프로젝트 투입 수정", true);
         this.dao = dao;
         this.isEdit = pp != null;
 
         try {
-            List<Project> projects = new ProjectDAO().search("", "");
+            String statusFilter = (preselectedProjectId < 0) ? "진행중" : "";
+            List<Project> projects = new ProjectDAO().search("", statusFilter);
             for (Project p : projects) projectBox.addItem(p);
         } catch (Exception ex) { JOptionPane.showMessageDialog(this, "프로젝트 목록 로드 실패: " + ex.getMessage()); }
 
@@ -56,11 +62,20 @@ public class ProjectParticipationDialog extends JDialog {
         lc.gridy = 4; fc.gridy = 4; form.add(new JLabel("투입일 (YYYY-MM-DD):"), lc); form.add(startField, fc);
         lc.gridy = 5; fc.gridy = 5; form.add(new JLabel("종료일 (YYYY-MM-DD, 선택):"), lc); form.add(endField, fc);
 
+        // 컨텍스트에서 열린 경우 프로젝트 고정, 아니면 자동완성 적용
+        int lockProjectId = isEdit ? pp.getProjectId() : preselectedProjectId;
+        if (lockProjectId != -1) {
+            for (int i = 0; i < projectBox.getItemCount(); i++) {
+                if (projectBox.getItemAt(i).getId() == lockProjectId) { projectBox.setSelectedIndex(i); break; }
+            }
+            projectBox.setEnabled(false);
+        } else {
+            ComboAutoComplete.apply(projectBox);
+        }
+        ComboAutoComplete.apply(developerBox);
+
         if (isEdit) {
             idField.setText(String.valueOf(pp.getId()));
-            for (int i = 0; i < projectBox.getItemCount(); i++) {
-                if (projectBox.getItemAt(i).getId() == pp.getProjectId()) { projectBox.setSelectedIndex(i); break; }
-            }
             for (int i = 0; i < developerBox.getItemCount(); i++) {
                 if (developerBox.getItemAt(i).getId() == pp.getDeveloperId()) { developerBox.setSelectedIndex(i); break; }
             }
@@ -123,6 +138,32 @@ public class ProjectParticipationDialog extends JDialog {
             Project p = (Project) projectBox.getSelectedItem();
             Developer d = (Developer) developerBox.getSelectedItem();
             String end = endField.getText().trim();
+
+            // 동일 프로젝트 중복 투입 차단
+            ProjectParticipation existing = dao.getByProjectAndEmployee(p.getId(), d.getId());
+            if (existing != null && (!isEdit || existing.getId() != id)) {
+                JOptionPane.showMessageDialog(this,
+                    d.getEmployeeName() + " 직원은 이미 해당 프로젝트에 투입되어 있습니다.",
+                    "중복 투입", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+
+            // 완료된 프로젝트에는 투입 불가
+            if (p.getEndDate() != null && !p.getEndDate().isEmpty()) {
+                JOptionPane.showMessageDialog(this,
+                    "'" + p.getProjectName() + "'은 이미 완료된 프로젝트입니다.\n완료된 프로젝트에는 인원을 투입할 수 없습니다.",
+                    "투입 제한", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+
+            // 종료일 없이 투입 시 이미 진행 중인 프로젝트가 있으면 차단
+            if (end.isEmpty() && dao.isActivelyParticipating(d.getId(), isEdit ? id : -1)) {
+                JOptionPane.showMessageDialog(this,
+                    d.getEmployeeName() + " 직원은 이미 다른 프로젝트에 투입 중입니다.\n기존 프로젝트를 먼저 완료하세요.",
+                    "투입 제한", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+
             ProjectParticipation pp = new ProjectParticipation(id, p.getId(), p.getProjectName(),
                 d.getId(), d.getEmployeeName(), roleField.getText().trim(), start, end.isEmpty() ? null : end);
             if (isEdit) dao.update(pp); else dao.insert(pp);
