@@ -26,9 +26,13 @@
 - 더블클릭으로 해당 기능 페이지 이동 및 항목 자동 선택
 
 ### 🏆 직급 / 승진
-- 입사일 + 이전 경력 일수 합산 기준 직급 자동 계산
-- 앱 시작 시 전체 직원 직급 일괄 재계산 (기존 데이터 경력 반영)
-- MySQL Event Scheduler: 매일 자정 근속 연수 기준 직급 자동 갱신 + 인사 기록 삽입
+
+직급은 **이전 직장 경력 일수 합산 + 현재 회사 입사일 이후 근무 일수** 를 기준으로 자동 계산됩니다.
+경력이 없는 경우 경력일은 0으로 처리됩니다.
+
+```
+총 경력일 = Σ(이전 직장 퇴사일 - 입사일) + (오늘 - 현재 회사 입사일)
+```
 
 | 총 경력 연수 | 직급 |
 |---|---|
@@ -37,6 +41,14 @@
 | 4 ~ 6년 미만 | 과장 |
 | 6 ~ 8년 미만 | 부장 |
 | 8년 이상 | 이사 |
+
+**자동 갱신 시점**
+
+| 시점 | 방식 | 경력 반영 |
+|------|------|-----------|
+| 앱 시작 시 | Java 백그라운드 스레드 일괄 재계산 | ✅ 경력일 + 입사일 |
+| 직원 등록 시 | 다이얼로그에서 즉시 계산 | ✅ 경력일 + 입사일 |
+| 매일 자정 | MySQL Event Scheduler | 입사일 기준 (DB 레벨) |
 
 ### 📋 인사 기록
 - 승진 이력 조회 / 등록 / 수정 / 삭제
@@ -88,9 +100,9 @@ mysql -u root -p
 ```
 
 ```sql
-CREATE DATABASE {{DB_NAME}} CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-CREATE USER '{{USER_NAME}}'@'{{HOST}}' IDENTIFIED BY '{{PASSWORD}}';
-GRANT ALL PRIVILEGES ON {{DB_NAME}}.* TO '{{USER_NAME}}'@'{{HOST}}';
+CREATE DATABASE cmm CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE USER 'ureca'@'localhost' IDENTIFIED BY 'ureca';
+GRANT ALL PRIVILEGES ON cmm.* TO 'ureca'@'localhost';
 FLUSH PRIVILEGES;
 ```
 
@@ -118,7 +130,7 @@ mysql -u ureca -pureca cmm < export/erp_system_dml.sql
 
 ### 4. MySQL Event Scheduler 등록
 
-입사일 기준 직급을 매일 자동으로 갱신하는 MySQL EVENT입니다.
+입사일 기준 직급을 매일 자정 자동으로 갱신하는 MySQL EVENT입니다.
 **root 계정**으로 한 번만 실행하면 됩니다.
 
 ```bash
@@ -203,18 +215,6 @@ ERP_SYSTEM/
 │   └── erp_system_dml.sql        # 테스트 데이터 (직원 100명)
 ├── src/main/java/com/example/
 │   ├── dao/                      # JDBC DAO (SQL 직접 작성)
-│   │   ├── EmployeeDAO.java
-│   │   ├── CareerDAO.java
-│   │   ├── LeaveDAO.java
-│   │   ├── ProjectDAO.java
-│   │   ├── ProjectParticipationDAO.java
-│   │   ├── HrRecordDAO.java
-│   │   ├── StudyDAO.java
-│   │   ├── StudyParticipationDAO.java
-│   │   ├── SeminarDAO.java
-│   │   ├── SeminarParticipationDAO.java
-│   │   ├── SeminarEvaluationDAO.java
-│   │   └── ...
 │   ├── model/                    # 엔티티 모델 (POJO)
 │   ├── util/
 │   │   ├── UserSession.java      # 로그인 세션 싱글턴
