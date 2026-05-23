@@ -236,6 +236,10 @@ ERP_SYSTEM/
 
 ## DB 스키마
 
+### ERD
+
+![ERD](export/erp_system_erd.png)
+
 ### 인사 관리
 
 | 테이블 | 설명 |
