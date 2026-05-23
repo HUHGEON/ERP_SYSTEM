@@ -209,25 +209,25 @@ ALTER TABLE `study_activity_history` ADD CONSTRAINT `PK_STUDY_ACTIVITY_HISTORY` 
 ALTER TABLE `employee` ADD CONSTRAINT `FK_position_TO_employee`
     FOREIGN KEY (`position_id`) REFERENCES `position` (`id`);
 
--- 개발자 → 직원
+-- 개발자 → 직원 (CASCADE: 직원 삭제 시 개발자 레코드 자동 삭제)
 ALTER TABLE `developer` ADD CONSTRAINT `FK_employee_TO_developer`
-    FOREIGN KEY (`id`) REFERENCES `employee` (`id`);
+    FOREIGN KEY (`id`) REFERENCES `employee` (`id`) ON DELETE CASCADE;
 
--- 경영관리 → 직원
+-- 경영관리 → 직원 (CASCADE)
 ALTER TABLE `management` ADD CONSTRAINT `FK_employee_TO_management`
-    FOREIGN KEY (`id`) REFERENCES `employee` (`id`);
+    FOREIGN KEY (`id`) REFERENCES `employee` (`id`) ON DELETE CASCADE;
 
--- 인사기록 → 직원
+-- 인사기록 → 직원 (CASCADE)
 ALTER TABLE `hr_records` ADD CONSTRAINT `FK_employee_TO_hr_records`
-    FOREIGN KEY (`employee_id`) REFERENCES `employee` (`id`);
+    FOREIGN KEY (`employee_id`) REFERENCES `employee` (`id`) ON DELETE CASCADE;
 
 -- 인사기록 → 직급
 ALTER TABLE `hr_records` ADD CONSTRAINT `FK_position_TO_hr_records`
     FOREIGN KEY (`position_id`) REFERENCES `position` (`id`);
 
--- 휴가기록 → 직원
+-- 휴가기록 → 직원 (CASCADE)
 ALTER TABLE `leave_records` ADD CONSTRAINT `FK_employee_TO_leave_records`
-    FOREIGN KEY (`employee_id`) REFERENCES `employee` (`id`);
+    FOREIGN KEY (`employee_id`) REFERENCES `employee` (`id`) ON DELETE CASCADE;
 
 -- 프로젝트 → 발주처
 ALTER TABLE `project` ADD CONSTRAINT `FK_customer_TO_project`
@@ -237,77 +237,101 @@ ALTER TABLE `project` ADD CONSTRAINT `FK_customer_TO_project`
 ALTER TABLE `project_participation` ADD CONSTRAINT `FK_project_TO_project_participation`
     FOREIGN KEY (`project_id`) REFERENCES `project` (`id`);
 
--- 프로젝트 투입 → 개발자
+-- 프로젝트 투입 → 개발자 (CASCADE: 개발자 삭제 시 투입 이력 자동 삭제)
 ALTER TABLE `project_participation` ADD CONSTRAINT `FK_developer_TO_project_participation`
-    FOREIGN KEY (`developer_id`) REFERENCES `developer` (`id`);
+    FOREIGN KEY (`developer_id`) REFERENCES `developer` (`id`) ON DELETE CASCADE;
 
 -- 산출물 → 프로젝트
 ALTER TABLE `output` ADD CONSTRAINT `FK_project_TO_output`
     FOREIGN KEY (`project_id`) REFERENCES `project` (`id`);
 
--- 평가 → 프로젝트 투입
+-- 평가 → 프로젝트 투입 (CASCADE)
 ALTER TABLE `evaluation` ADD CONSTRAINT `FK_project_participation_TO_evaluation`
-    FOREIGN KEY (`participation_id`) REFERENCES `project_participation` (`id`);
+    FOREIGN KEY (`participation_id`) REFERENCES `project_participation` (`id`) ON DELETE CASCADE;
 
--- 평가 항목 → 평가
+-- 평가 항목 → 평가 (CASCADE)
 ALTER TABLE `evaluation_item` ADD CONSTRAINT `FK_evaluation_TO_evaluation_item`
-    FOREIGN KEY (`evaluation_id`) REFERENCES `evaluation` (`id`);
+    FOREIGN KEY (`evaluation_id`) REFERENCES `evaluation` (`id`) ON DELETE CASCADE;
 
--- 고객 평가 → 평가
+-- 고객 평가 → 평가 (CASCADE)
 ALTER TABLE `customer_evaluation` ADD CONSTRAINT `FK_evaluation_TO_customer_evaluation`
-    FOREIGN KEY (`id`) REFERENCES `evaluation` (`id`);
+    FOREIGN KEY (`id`) REFERENCES `evaluation` (`id`) ON DELETE CASCADE;
 
 -- 고객 평가 → 발주처
 ALTER TABLE `customer_evaluation` ADD CONSTRAINT `FK_customer_TO_customer_evaluation`
     FOREIGN KEY (`customer_id`) REFERENCES `customer` (`id`);
 
--- PM 평가 → 평가
+-- PM 평가 → 평가 (CASCADE)
 ALTER TABLE `pm_evaluation` ADD CONSTRAINT `FK_evaluation_TO_pm_evaluation`
-    FOREIGN KEY (`id`) REFERENCES `evaluation` (`id`);
+    FOREIGN KEY (`id`) REFERENCES `evaluation` (`id`) ON DELETE CASCADE;
 
--- PM 평가 → 개발자
+-- PM 평가 → 개발자 (CASCADE)
 ALTER TABLE `pm_evaluation` ADD CONSTRAINT `FK_developer_TO_pm_evaluation`
-    FOREIGN KEY (`pm_id`) REFERENCES `developer` (`id`);
+    FOREIGN KEY (`pm_id`) REFERENCES `developer` (`id`) ON DELETE CASCADE;
 
--- 동료 평가 → 평가
+-- 동료 평가 → 평가 (CASCADE)
 ALTER TABLE `partner_evaluation` ADD CONSTRAINT `FK_evaluation_TO_partner_evaluation`
-    FOREIGN KEY (`id`) REFERENCES `evaluation` (`id`);
+    FOREIGN KEY (`id`) REFERENCES `evaluation` (`id`) ON DELETE CASCADE;
 
--- 동료 평가 → 개발자
+-- 동료 평가 → 개발자 (CASCADE)
 ALTER TABLE `partner_evaluation` ADD CONSTRAINT `FK_developer_TO_partner_evaluation`
-    FOREIGN KEY (`partner_id`) REFERENCES `developer` (`id`);
+    FOREIGN KEY (`partner_id`) REFERENCES `developer` (`id`) ON DELETE CASCADE;
 
--- 경력 → 개발자
+-- 경력 → 개발자 (CASCADE)
 ALTER TABLE `career` ADD CONSTRAINT `FK_developer_TO_career`
-    FOREIGN KEY (`employee_id`) REFERENCES `developer` (`id`);
+    FOREIGN KEY (`employee_id`) REFERENCES `developer` (`id`) ON DELETE CASCADE;
 
 -- 세미나 참여 → 세미나
 ALTER TABLE `seminar_participation` ADD CONSTRAINT `FK_seminar_TO_seminar_participation`
     FOREIGN KEY (`seminar_id`) REFERENCES `seminar` (`id`);
 
--- 세미나 참여 → 직원
+-- 세미나 참여 → 직원 (CASCADE)
 ALTER TABLE `seminar_participation` ADD CONSTRAINT `FK_employee_TO_seminar_participation`
-    FOREIGN KEY (`employee_id`) REFERENCES `employee` (`id`);
+    FOREIGN KEY (`employee_id`) REFERENCES `employee` (`id`) ON DELETE CASCADE;
 
 -- 세미나 평가 → 세미나
 ALTER TABLE `seminar_evaluation` ADD CONSTRAINT `FK_seminar_TO_seminar_evaluation`
     FOREIGN KEY (`seminar_id`) REFERENCES `seminar` (`id`);
 
--- 세미나 평가 → 직원
+-- 세미나 평가 → 직원 (CASCADE)
 ALTER TABLE `seminar_evaluation` ADD CONSTRAINT `FK_employee_TO_seminar_evaluation`
-    FOREIGN KEY (`employee_id`) REFERENCES `employee` (`id`);
+    FOREIGN KEY (`employee_id`) REFERENCES `employee` (`id`) ON DELETE CASCADE;
 
 -- 스터디 참여 → 스터디
 ALTER TABLE `study_participation` ADD CONSTRAINT `FK_study_TO_study_participation`
     FOREIGN KEY (`study_id`) REFERENCES `study` (`id`);
 
--- 스터디 참여 → 직원
+-- 스터디 참여 → 직원 (CASCADE)
 ALTER TABLE `study_participation` ADD CONSTRAINT `FK_employee_TO_study_participation`
-    FOREIGN KEY (`employee_id`) REFERENCES `employee` (`id`);
+    FOREIGN KEY (`employee_id`) REFERENCES `employee` (`id`) ON DELETE CASCADE;
 
 -- 스터디 활동 기록 → 스터디
 ALTER TABLE `study_activity_history` ADD CONSTRAINT `FK_study_TO_study_activity_history`
     FOREIGN KEY (`study_id`) REFERENCES `study` (`id`);
+
+-- ============================================================
+-- UNIQUE CONSTRAINTS
+-- ============================================================
+
+-- 직원: 주민번호·전화번호·이메일은 인당 고유
+ALTER TABLE `employee` ADD CONSTRAINT `UQ_EMPLOYEE_RESIDENT` UNIQUE (`resident_number`);
+ALTER TABLE `employee` ADD CONSTRAINT `UQ_EMPLOYEE_PHONE`    UNIQUE (`phone_number`);
+ALTER TABLE `employee` ADD CONSTRAINT `UQ_EMPLOYEE_EMAIL`    UNIQUE (`email`);
+
+-- 발주처: 이름 중복 방지 (findOrCreateCustomer 전제 조건)
+ALTER TABLE `customer` ADD CONSTRAINT `UQ_CUSTOMER_NAME` UNIQUE (`customer_name`);
+
+-- 프로젝트 투입: 동일 프로젝트에 동일 개발자 중복 불가
+ALTER TABLE `project_participation` ADD CONSTRAINT `UQ_PP_PROJECT_DEV` UNIQUE (`project_id`, `developer_id`);
+
+-- 세미나 참여: 동일 세미나에 동일 직원 중복 불가
+ALTER TABLE `seminar_participation` ADD CONSTRAINT `UQ_SEMINAR_PART_EMP` UNIQUE (`seminar_id`, `employee_id`);
+
+-- 세미나 평가: 동일 세미나에 동일 직원 평가 중복 불가
+ALTER TABLE `seminar_evaluation` ADD CONSTRAINT `UQ_SEMINAR_EVAL_EMP` UNIQUE (`seminar_id`, `employee_id`);
+
+-- 스터디 참여: 동일 스터디에 동일 직원 중복 불가
+ALTER TABLE `study_participation` ADD CONSTRAINT `UQ_STUDY_PART_EMP` UNIQUE (`study_id`, `employee_id`);
 
 -- ============================================================
 -- VIEW: 직원별 잔여 연차 (연가만 차감, 공가 제외)
