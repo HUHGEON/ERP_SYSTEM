@@ -4,6 +4,7 @@ import com.example.dao.EmployeeDAO;
 import com.example.dao.HrRecordDAO;
 import com.example.model.Employee;
 import com.example.util.ComboAutoComplete;
+import com.example.util.MaskingUtil;
 import com.example.model.HrRecord;
 import com.example.model.Position;
 
@@ -47,6 +48,7 @@ public class HrRecordDialog extends JDialog {
         form.setBorder(BorderFactory.createEmptyBorder(15, 20, 10, 20));
         GridBagConstraints lc = lc(); GridBagConstraints fc = fc();
 
+        MaskingUtil.installDateFilter(promotionField);
         idField.setEditable(false);
         lc.gridy = 1; fc.gridy = 1; form.add(new JLabel("직원:"), lc); form.add(employeeBox, fc);
         lc.gridy = 2; fc.gridy = 2; form.add(new JLabel("승진 직급:"), lc); form.add(positionBox, fc);

@@ -15,6 +15,23 @@ import java.util.List;
 
 public class EmployeeDetailPanel extends JPanel {
 
+    private static final javax.swing.Icon LOCK_ICON = new javax.swing.Icon() {
+        @Override public int getIconWidth()  { return 13; }
+        @Override public int getIconHeight() { return 15; }
+        @Override public void paintIcon(java.awt.Component c, java.awt.Graphics g, int x, int y) {
+            java.awt.Graphics2D g2 = (java.awt.Graphics2D) g.create();
+            g2.setRenderingHint(java.awt.RenderingHints.KEY_ANTIALIASING, java.awt.RenderingHints.VALUE_ANTIALIAS_ON);
+            g2.setColor(new Color(0x99, 0x99, 0xBB));
+            g2.fillRoundRect(x + 1, y + 6, 11, 9, 3, 3);
+            g2.setStroke(new java.awt.BasicStroke(2f));
+            g2.drawArc(x + 1, y, 11, 9, 0, 180);
+            g2.setColor(Color.WHITE);
+            g2.fillOval(x + 4, y + 8, 4, 3);
+            g2.fillRect(x + 5, y + 10, 2, 3);
+            g2.dispose();
+        }
+    };
+
     private final HrRecordDAO hrRecordDAO = new HrRecordDAO();
     private final DeveloperDAO developerDAO = new DeveloperDAO();
     private final ManagementDAO managementDAO = new ManagementDAO();
@@ -35,6 +52,9 @@ public class EmployeeDetailPanel extends JPanel {
 
     private final JLabel leaveRemainingLabel = new JLabel();
     private final JLabel leaveUsedLabel      = new JLabel();
+
+    private int     currentSalary   = 0;
+    private boolean salaryRevealed  = false;
 
     private final JLabel permissionLabel = new JLabel();
     private final JPanel permissionRow;
@@ -95,6 +115,16 @@ public class EmployeeDetailPanel extends JPanel {
         addHeaderCell(headerPanel, gc, 4, 0, "부서",   deptLabel,      new Color(70, 130, 180));
         addHeaderCell(headerPanel, gc, 6, 0, "입사일", hireDateLabel,  new Color(34, 139, 34));
         addHeaderCell(headerPanel, gc, 8, 0, "승진일", promotionLabel, new Color(34, 139, 34));
+
+        // 연봉: 블라킹 → 클릭 시 토글
+        salaryLabel.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        salaryLabel.setToolTipText("클릭하여 확인");
+        salaryLabel.addMouseListener(new MouseAdapter() {
+            @Override public void mouseClicked(MouseEvent e) {
+                salaryRevealed = !salaryRevealed;
+                updateSalaryLabel();
+            }
+        });
 
         // 두 번째 줄: 연봉 | 잔여 연차 | 사용 연차
         addHeaderCell(headerPanel, gc, 0, 1, "연봉",      salaryLabel,         new Color(160, 60, 180));
@@ -197,6 +227,20 @@ public class EmployeeDetailPanel extends JPanel {
         });
     }
 
+    private void updateSalaryLabel() {
+        if (salaryRevealed) {
+            salaryLabel.setIcon(null);
+            salaryLabel.setText(currentSalary > 0 ? String.format("%,d원", currentSalary) : "-");
+            salaryLabel.setForeground(new Color(160, 60, 180));
+            salaryLabel.setToolTipText("클릭하여 숨기기");
+        } else {
+            salaryLabel.setIcon(LOCK_ICON);
+            salaryLabel.setText(" 보기");
+            salaryLabel.setForeground(new Color(140, 140, 165));
+            salaryLabel.setToolTipText("클릭하여 확인");
+        }
+    }
+
     public void loadEmployee(Employee emp) {
         // 기본 정보
         nameLabel.setText(emp.getEmployeeName());
@@ -204,7 +248,9 @@ public class EmployeeDetailPanel extends JPanel {
         deptLabel.setText(emp.getDepartment());
         String hd = emp.getHireDate();
         hireDateLabel.setText(hd != null ? hd.substring(0, Math.min(10, hd.length())) : "-");
-        salaryLabel.setText(emp.getSalary() > 0 ? String.format("%,d원", emp.getSalary()) : "-");
+        currentSalary = emp.getSalary();
+        salaryRevealed = true;
+        updateSalaryLabel();
 
         // 인사 기록 (가장 최근 승진일)
         try {

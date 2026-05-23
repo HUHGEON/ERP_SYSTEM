@@ -11,6 +11,7 @@ import javax.swing.table.TableRowSorter;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.awt.event.MouseMotionAdapter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -18,19 +19,30 @@ import java.util.List;
 
 public class MainFrame extends JFrame {
 
-    // ── Palette ──────────────────────────────────────────────────
-    private static final Color SB_BG      = new Color(18,  22,  40);
-    private static final Color SB_HOVER   = new Color(28,  33,  56);
-    private static final Color SB_HDR_FG  = new Color(100, 115, 158);
-    private static final Color SB_FG      = new Color(195, 205, 228);
-    private static final Color SB_ACT_BG  = new Color(34,  40,  68);
-    private static final Color SB_ACT_FG  = Color.WHITE;
-    private static final Color ACCENT     = new Color(66, 133, 244);
-    private static final Color CONTENT_BG = new Color(244, 246, 251);
+    // ── Palette (Ensemble-HR light theme) ────────────────────────
+    private static final Color BG           = new Color(0xF7, 0xF7, 0xF5);
+    private static final Color SURFACE      = Color.WHITE;
+    private static final Color BORDER       = new Color(0xEC, 0xEC, 0xEA);
+    private static final Color BORDER_STRONG= new Color(0xD8, 0xD8, 0xD4);
+    private static final Color TEXT         = new Color(0x1A, 0x1A, 0x1A);
+    private static final Color TEXT_MUTED   = new Color(0x66, 0x66, 0x61);
+    private static final Color TEXT_DIM     = new Color(0x9C, 0x9C, 0x95);
+    private static final Color ROW_SELECTED = new Color(0xEE, 0xF0, 0xFB);
+    private static final Color ACCENT       = new Color(0x4B, 0x5E, 0xAA);
+    private static final Color ACCENT_SOFT  = new Color(0xEE, 0xF0, 0xFB);
+    private static final Color ACCENT_TEXT  = new Color(0x3A, 0x4A, 0x8C);
+
+    private static final Color SB_BG      = Color.WHITE;
+    private static final Color SB_HOVER   = new Color(0xF7, 0xF7, 0xF5);
+    private static final Color SB_HDR_FG  = new Color(0x9C, 0x9C, 0x95);
+    private static final Color SB_FG      = new Color(0x44, 0x44, 0x44);
+    private static final Color SB_ACT_BG  = new Color(0xEE, 0xF0, 0xFB);
+    private static final Color SB_ACT_FG  = new Color(0x3A, 0x4A, 0x8C);
+    private static final Color CONTENT_BG = new Color(0xF7, 0xF7, 0xF5);
 
     // 테이블 헤더용
-    private static final Color TH_BG      = new Color(28,  34,  58);
-    private static final Color TH_BORDER  = new Color(50,  60,  100);
+    private static final Color TH_BG      = new Color(0xF7, 0xF7, 0xF5);
+    private static final Color TH_BORDER  = new Color(0xEC, 0xEC, 0xEA);
 
     private final CardLayout    contentCards = new CardLayout();
     private final JPanel        contentPanel = new JPanel(contentCards);
@@ -100,22 +112,23 @@ public class MainFrame extends JFrame {
     // ── 콘텐츠 래퍼 ─────────────────────────────────────────────
     private void buildContentWrap() {
         JPanel titleBar = new JPanel(new BorderLayout());
-        titleBar.setBackground(Color.WHITE);
+        titleBar.setBackground(SURFACE);
         titleBar.setPreferredSize(new Dimension(0, 48));
-        titleBar.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, new Color(225, 230, 244)));
+        titleBar.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, BORDER));
 
         pageTitleLbl.setFont(new Font("SansSerif", Font.BOLD, 17));
-        pageTitleLbl.setForeground(new Color(22, 28, 52));
+        pageTitleLbl.setForeground(TEXT);
         pageTitleLbl.setBorder(BorderFactory.createEmptyBorder(0, 24, 0, 0));
 
         JButton refreshBtn = new JButton("새로고침");
         refreshBtn.setFocusPainted(false);
         refreshBtn.setFont(new Font("SansSerif", Font.PLAIN, 12));
         refreshBtn.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createLineBorder(new Color(200, 210, 235)),
+            BorderFactory.createLineBorder(BORDER_STRONG),
             BorderFactory.createEmptyBorder(4, 12, 4, 12)
         ));
-        refreshBtn.setBackground(Color.WHITE);
+        refreshBtn.setBackground(SURFACE);
+        refreshBtn.setForeground(TEXT_MUTED);
         refreshBtn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         refreshBtn.addActionListener(e -> {
             if (currentCardKey == null) return;
@@ -139,9 +152,9 @@ public class MainFrame extends JFrame {
     // ── Top Bar ──────────────────────────────────────────────────
     private JPanel buildTopBar() {
         JPanel bar = new JPanel(new BorderLayout());
-        bar.setBackground(SB_BG);
+        bar.setBackground(SURFACE);
         bar.setPreferredSize(new Dimension(0, 52));
-        bar.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, new Color(30, 36, 65)));
+        bar.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, BORDER));
 
         // 좌: 벡터 로고
         final int BAR_H  = 48;
@@ -149,7 +162,7 @@ public class MainFrame extends JFrame {
         bar.setPreferredSize(new Dimension(0, BAR_H));
 
         JPanel logoArea = new JPanel(new FlowLayout(FlowLayout.LEFT, 14, (BAR_H - LOGO_H) / 2));
-        logoArea.setBackground(SB_BG);
+        logoArea.setBackground(SURFACE);
         logoArea.add(buildLogoPanel(LOGO_H));
 
         // 우: 유저 정보
@@ -158,9 +171,9 @@ public class MainFrame extends JFrame {
 
         JLabel userLbl = new JLabel(s.getName() + "   " + s.getDepartment());
         userLbl.setFont(new Font("SansSerif", Font.BOLD, 13));
-        userLbl.setForeground(new Color(205, 215, 235));
+        userLbl.setForeground(TEXT);
 
-        JLabel roleBadge = buildRoundBadge(role, s.isAdmin() ? ACCENT : new Color(80, 95, 140));
+        JLabel roleBadge = buildRoundBadge(role, s.isAdmin() ? ACCENT : TEXT_MUTED);
 
         JButton logoutBtn = buildOutlineBtn("로그아웃");
         logoutBtn.addActionListener(e -> {
@@ -194,7 +207,7 @@ public class MainFrame extends JFrame {
         });
 
         JPanel right = new JPanel(new FlowLayout(FlowLayout.RIGHT, 14, 0));
-        right.setBackground(SB_BG);
+        right.setBackground(SURFACE);
         right.add(userLbl);
         right.add(roleBadge);
         right.add(logoutBtn);
@@ -225,13 +238,13 @@ public class MainFrame extends JFrame {
     private JButton buildOutlineBtn(String text) {
         JButton btn = new JButton(text);
         btn.setFont(new Font("SansSerif", Font.BOLD, 12));
-        btn.setForeground(new Color(190, 200, 225));
-        btn.setBackground(new Color(30, 36, 62));
+        btn.setForeground(TEXT_MUTED);
+        btn.setBackground(SURFACE);
         btn.setOpaque(true);
         btn.setFocusPainted(false);
         btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
         btn.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createLineBorder(new Color(58, 68, 105), 1),
+            BorderFactory.createLineBorder(BORDER_STRONG, 1),
             BorderFactory.createEmptyBorder(5, 16, 5, 16)
         ));
         return btn;
@@ -239,8 +252,8 @@ public class MainFrame extends JFrame {
 
     // ── 벡터 로고 패널 ───────────────────────────────────────────
     private JPanel buildLogoPanel(int h) {
-        final Color FG  = new Color(205, 215, 232);
-        final Color SUB = new Color(130, 148, 175);
+        final Color FG  = ACCENT;
+        final Color SUB = TEXT_DIM;
 
         JPanel p = new JPanel() {
             @Override public Dimension getPreferredSize() { return new Dimension(300, h); }
@@ -314,7 +327,7 @@ public class MainFrame extends JFrame {
                 // 구분선
                 int lineY = (int)(h * 0.62);
                 g2.setStroke(new BasicStroke(0.8f));
-                g2.setColor(new Color(90, 110, 145));
+                g2.setColor(BORDER_STRONG);
                 g2.drawLine(tx, lineY, getWidth() - 4, lineY);
 
                 // 서브타이틀
@@ -360,8 +373,8 @@ public class MainFrame extends JFrame {
         // 오른쪽 끝 토글 스트립
         JButton arrowBtn = new JButton("◀");
         arrowBtn.setFont(new Font("SansSerif", Font.BOLD, 10));
-        arrowBtn.setForeground(new Color(120, 140, 180));
-        arrowBtn.setBackground(new Color(22, 27, 48));
+        arrowBtn.setForeground(TEXT_DIM);
+        arrowBtn.setBackground(SURFACE);
         arrowBtn.setOpaque(true);
         arrowBtn.setBorderPainted(false);
         arrowBtn.setFocusPainted(false);
@@ -376,15 +389,16 @@ public class MainFrame extends JFrame {
         });
 
         JPanel strip = new JPanel(new BorderLayout());
-        strip.setBackground(new Color(22, 27, 48));
+        strip.setBackground(SURFACE);
         strip.setPreferredSize(new Dimension(16, 0));
-        strip.setBorder(BorderFactory.createMatteBorder(0, 1, 0, 0, new Color(38, 46, 80)));
+        strip.setBorder(BorderFactory.createMatteBorder(0, 1, 0, 0, BORDER));
         strip.add(arrowBtn, BorderLayout.CENTER);
 
         // 래퍼: 콘텐츠 + 스트립
         JPanel wrapper = new JPanel(new BorderLayout());
         wrapper.add(sb,    BorderLayout.CENTER);
         wrapper.add(strip, BorderLayout.EAST);
+        wrapper.setBorder(BorderFactory.createMatteBorder(0, 0, 0, 1, BORDER));
         return wrapper;
     }
 
@@ -397,16 +411,16 @@ public class MainFrame extends JFrame {
         }
 
         JButton sBtn = new JButton("▾  " + title);
-        sBtn.setFont(new Font("SansSerif", Font.BOLD, 13));
-        sBtn.setForeground(Color.WHITE);
-        sBtn.setBackground(new Color(24, 29, 52));
+        sBtn.setFont(new Font("SansSerif", Font.BOLD, 11));
+        sBtn.setForeground(SB_HDR_FG);
+        sBtn.setBackground(SB_BG);
         sBtn.setOpaque(true);
         sBtn.setContentAreaFilled(true);
         sBtn.setBorderPainted(false);
         sBtn.setFocusPainted(false);
         sBtn.setHorizontalAlignment(SwingConstants.LEFT);
         sBtn.setAlignmentX(Component.LEFT_ALIGNMENT);
-        sBtn.setMaximumSize(new Dimension(Integer.MAX_VALUE, 40));
+        sBtn.setMaximumSize(new Dimension(Integer.MAX_VALUE, 32));
         sBtn.setBorder(BorderFactory.createEmptyBorder(0, 14, 0, 8));
         sBtn.setCursor(new Cursor(Cursor.HAND_CURSOR));
 
@@ -461,11 +475,12 @@ public class MainFrame extends JFrame {
         for (JButton b : menuBtns) {
             b.setBackground(SB_BG);
             b.setForeground(SB_FG);
-            b.setFont(new Font("SansSerif", Font.BOLD, 13));
+            b.setFont(new Font("SansSerif", Font.PLAIN, 13));
             b.setBorder(BorderFactory.createEmptyBorder(0, 26, 0, 8));
         }
         target.setBackground(SB_ACT_BG);
         target.setForeground(SB_ACT_FG);
+        target.setFont(new Font("SansSerif", Font.BOLD, 13));
         target.setBorder(BorderFactory.createCompoundBorder(
             BorderFactory.createMatteBorder(0, 3, 0, 0, ACCENT),
             BorderFactory.createEmptyBorder(0, 23, 0, 8)
@@ -492,6 +507,43 @@ public class MainFrame extends JFrame {
 
     private void applyTableStyle(JTable table) {
         // 헤더 클릭 정렬 + 숫자 컬럼은 숫자 비교, 문자 컬럼은 사전순 비교
+        final int[] hoveredRow = {-1};
+        table.addMouseMotionListener(new MouseMotionAdapter() {
+            @Override public void mouseMoved(MouseEvent e) {
+                int row = table.rowAtPoint(e.getPoint());
+                if (row != hoveredRow[0]) { hoveredRow[0] = row; table.repaint(); }
+            }
+        });
+        table.addMouseListener(new MouseAdapter() {
+            @Override public void mouseExited(MouseEvent e) {
+                hoveredRow[0] = -1; table.repaint();
+            }
+        });
+        table.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        table.setFillsViewportHeight(true);
+
+        // 행 렌더러: 호버 + 얼룩말 줄무늬
+        table.setDefaultRenderer(Object.class, new DefaultTableCellRenderer() {
+            @Override public Component getTableCellRendererComponent(
+                    JTable t, Object value, boolean sel, boolean focus, int row, int col) {
+                JLabel lbl = (JLabel) super.getTableCellRendererComponent(
+                        t, value, sel, focus, row, col);
+                lbl.setBorder(BorderFactory.createEmptyBorder(0, 12, 0, 12));
+                if (sel) {
+                    lbl.setBackground(new Color(0xEE, 0xF0, 0xFB));
+                    lbl.setForeground(new Color(0x3A, 0x4A, 0x8C));
+                } else if (row == hoveredRow[0]) {
+                    lbl.setBackground(new Color(0xF7, 0xF7, 0xF3));
+                    lbl.setForeground(new Color(0x1A, 0x1A, 0x1A));
+                } else {
+                    lbl.setBackground(row % 2 == 0 ? Color.WHITE : new Color(0xFB, 0xFB, 0xF9));
+                    lbl.setForeground(new Color(0x1A, 0x1A, 0x1A));
+                }
+                lbl.setOpaque(true);
+                return lbl;
+            }
+        });
+
         TableRowSorter<TableModel> sorter = new TableRowSorter<>(table.getModel());
         Comparator<Object> smartCmp = (a, b) -> {
             try {
@@ -514,11 +566,11 @@ public class MainFrame extends JFrame {
                 JLabel lbl = (JLabel) super.getTableCellRendererComponent(
                         t, value, sel, focus, row, col);
                 lbl.setBackground(TH_BG);
-                lbl.setForeground(Color.WHITE);
+                lbl.setForeground(TEXT_MUTED);
                 lbl.setFont(new Font("SansSerif", Font.BOLD, 12));
                 lbl.setOpaque(true);
                 lbl.setBorder(BorderFactory.createCompoundBorder(
-                    BorderFactory.createMatteBorder(0, 0, 2, 1, TH_BORDER),
+                    BorderFactory.createMatteBorder(0, 0, 1, 1, TH_BORDER),
                     BorderFactory.createEmptyBorder(4, 12, 4, 12)
                 ));
                 lbl.setHorizontalAlignment(SwingConstants.LEFT);
@@ -539,17 +591,17 @@ public class MainFrame extends JFrame {
                 return lbl;
             }
         });
-        table.getTableHeader().setPreferredSize(new Dimension(0, 32));
+        table.getTableHeader().setPreferredSize(new Dimension(0, 34));
         table.getTableHeader().setBackground(TH_BG);
 
         // 바디
-        table.setRowHeight(28);
+        table.setRowHeight(32);
         table.setShowGrid(true);
-        table.setGridColor(new Color(228, 232, 245));
-        table.setBackground(Color.WHITE);
-        table.setSelectionBackground(new Color(210, 225, 255));
-        table.setSelectionForeground(new Color(20, 30, 70));
-        table.setIntercellSpacing(new Dimension(0, 1));
+        table.setGridColor(BORDER);
+        table.setBackground(SURFACE);
+        table.setSelectionBackground(ROW_SELECTED);
+        table.setSelectionForeground(ACCENT_TEXT);
+        table.setIntercellSpacing(new Dimension(0, 0));
         table.setFont(new Font("SansSerif", Font.PLAIN, 13));
     }
 }

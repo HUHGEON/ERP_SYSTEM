@@ -14,7 +14,7 @@ import java.util.List;
 public class LeavePanel extends JPanel implements Refreshable {
 
     private static final String[] LEAVE_TYPES = {"", "연가", "공가"};
-    private static final String[] COLUMNS = {"ID", "직원 이름", "휴가 종류", "시작일", "종료일"};
+    private static final String[] COLUMNS = {"ID", "직원 이름", "휴가 종류", "시작일", "종료일", "사용일수"};
 
     private final boolean isAdmin = UserSession.getInstance().isAdmin();
     private final int myId = UserSession.getInstance().getEmployeeId();
@@ -51,6 +51,7 @@ public class LeavePanel extends JPanel implements Refreshable {
         table.getColumnModel().getColumn(2).setPreferredWidth(70);   // 휴가 종류
         table.getColumnModel().getColumn(3).setPreferredWidth(90);   // 시작일
         table.getColumnModel().getColumn(4).setPreferredWidth(90);   // 종료일
+        table.getColumnModel().getColumn(5).setPreferredWidth(65);   // 사용일수
 
         JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
         JButton addBtn = new JButton("추가");
@@ -96,9 +97,18 @@ public class LeavePanel extends JPanel implements Refreshable {
                 : dao.getByEmployeeId(myId);
             tableModel.setRowCount(0);
             for (LeaveRecord lr : currentList) {
+                String days = "-";
+                try {
+                    if (lr.getStartDate() != null && lr.getEndDate() != null) {
+                        long d = java.time.temporal.ChronoUnit.DAYS.between(
+                            LocalDate.parse(lr.getStartDate()),
+                            LocalDate.parse(lr.getEndDate())) + 1;
+                        if (d > 0) days = d + "일";
+                    }
+                } catch (Exception ignored) {}
                 tableModel.addRow(new Object[]{
                     lr.getId(), lr.getEmployeeName(), lr.getLeaveType(),
-                    lr.getStartDate(), lr.getEndDate()
+                    lr.getStartDate(), lr.getEndDate(), days
                 });
             }
         } catch (Exception ex) {

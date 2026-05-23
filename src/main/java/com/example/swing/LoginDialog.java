@@ -13,10 +13,11 @@ import java.sql.SQLException;
 
 public class LoginDialog extends JDialog {
 
-    private static final Color NAVY       = new Color(25,  50, 120);
-    private static final Color NAVY_DARK  = new Color(18,  38,  95);
-    private static final Color BORDER_DEF = new Color(210, 215, 228);
-    private static final Color PH_FG      = new Color(175, 180, 198);
+    private static final Color NAVY       = new Color(0x4B, 0x5E, 0xAA);
+    private static final Color NAVY_DARK  = new Color(0x3A, 0x4A, 0x8C);
+    private static final Color BORDER_DEF = new Color(0xEC, 0xEC, 0xEA);
+    private static final Color PH_FG      = new Color(0x9C, 0x9C, 0x95);
+    private static final Color BG         = new Color(0xF7, 0xF7, 0xF5);
 
     private boolean authenticated = false;
 
@@ -33,10 +34,17 @@ public class LoginDialog extends JDialog {
         styleField(nameField);
         styleField(residentField);
 
+        // 서브타이틀
+        JLabel sub = new JLabel("ENSEMBLE ERP");
+        sub.setFont(new Font("SansSerif", Font.BOLD, 11));
+        sub.setForeground(new Color(0x9C, 0x9C, 0x95));
+        sub.setAlignmentX(Component.LEFT_ALIGNMENT);
+        sub.setMaximumSize(new Dimension(Integer.MAX_VALUE, 20));
+
         // 타이틀
         JLabel title = new JLabel("인사관리 시스템");
-        title.setFont(new Font("SansSerif", Font.BOLD, 24));
-        title.setForeground(NAVY);
+        title.setFont(new Font("SansSerif", Font.BOLD, 26));
+        title.setForeground(new Color(0x1A, 0x1A, 0x1A));
         title.setAlignmentX(Component.LEFT_ALIGNMENT);
         title.setMaximumSize(new Dimension(Integer.MAX_VALUE, 40));
 
@@ -50,8 +58,10 @@ public class LoginDialog extends JDialog {
         card.setBackground(Color.WHITE);
         card.setBorder(BorderFactory.createEmptyBorder(52, 44, 52, 44));
 
+        card.add(sub);
+        card.add(Box.createVerticalStrut(6));
         card.add(title);
-        card.add(Box.createVerticalStrut(36));
+        card.add(Box.createVerticalStrut(32));
         card.add(nameField);
         card.add(Box.createVerticalStrut(12));
         card.add(residentField);
@@ -59,7 +69,7 @@ public class LoginDialog extends JDialog {
         card.add(loginBtn);
 
         JPanel root = new JPanel(new GridBagLayout());
-        root.setBackground(Color.WHITE);
+        root.setBackground(BG);
         root.add(card);
 
         setContentPane(root);

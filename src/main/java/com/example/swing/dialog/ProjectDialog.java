@@ -2,6 +2,7 @@ package com.example.swing.dialog;
 
 import com.example.dao.ProjectDAO;
 import com.example.model.Project;
+import com.example.util.MaskingUtil;
 
 import javax.swing.*;
 import java.awt.*;
@@ -37,6 +38,8 @@ public class ProjectDialog extends JDialog {
         fc.insets = new Insets(5, 0, 5, 5);
         fc.gridwidth = GridBagConstraints.REMAINDER;
 
+        MaskingUtil.installDateFilter(startDateField);
+        MaskingUtil.installDateFilter(endDateField);
         addRow(form, lc, fc, 0, "프로젝트명:", nameField);
         addRow(form, lc, fc, 1, "발주처:", customerField);
         addRow(form, lc, fc, 2, "시작일 (YYYY-MM-DD):", startDateField);

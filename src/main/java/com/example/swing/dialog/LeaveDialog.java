@@ -19,8 +19,8 @@ public class LeaveDialog extends JDialog {
     private final JTextField idField = new JTextField(10);
     private final JComboBox<Employee> employeeBox = new JComboBox<>();
     private final JComboBox<String> leaveTypeBox;
-    private final JTextField startDateField = new JTextField(12);
-    private final JTextField endDateField = new JTextField(12);
+    private final JFormattedTextField startDateField = makeDateField();
+    private final JFormattedTextField endDateField   = makeDateField();
     private final JLabel remainingLabel = new JLabel();
 
     private final LeaveDAO dao;
@@ -75,8 +75,8 @@ public class LeaveDialog extends JDialog {
         lc.gridy = 1; fc.gridy = 1; form.add(new JLabel("직원:"), lc); form.add(employeeBox, fc);
         lc.gridy = 2; fc.gridy = 2; form.add(new JLabel("휴가 종류:"), lc); form.add(leaveTypeBox, fc);
         lc.gridy = 3; fc.gridy = 3; form.add(new JLabel(""), lc); form.add(remainingLabel, fc);
-        lc.gridy = 4; fc.gridy = 4; form.add(new JLabel("시작일 (YYYY-MM-DD):"), lc); form.add(startDateField, fc);
-        lc.gridy = 5; fc.gridy = 5; form.add(new JLabel("종료일 (YYYY-MM-DD):"), lc); form.add(endDateField, fc);
+        lc.gridy = 4; fc.gridy = 4; form.add(new JLabel("시작일:"), lc); form.add(startDateField, fc);
+        lc.gridy = 5; fc.gridy = 5; form.add(new JLabel("종료일:"), lc); form.add(endDateField, fc);
 
         idField.setEditable(false);
         if (isEdit) {
@@ -140,10 +140,14 @@ public class LeaveDialog extends JDialog {
         return sel instanceof Employee ? (Employee) sel : null;
     }
 
+    private static boolean isValidDate(String date) {
+        return date != null && date.matches("\\d{4}-\\d{2}-\\d{2}");
+    }
+
     private boolean validateDates() {
         String start = startDateField.getText().trim();
-        String end = endDateField.getText().trim();
-        if (!start.isEmpty() && !end.isEmpty() && end.compareTo(start) < 0) {
+        String end   = endDateField.getText().trim();
+        if (isValidDate(start) && isValidDate(end) && end.compareTo(start) < 0) {
             endDateField.setBackground(new Color(255, 200, 200));
             return false;
         }
@@ -157,8 +161,8 @@ public class LeaveDialog extends JDialog {
         Employee emp = getSelectedEmployee();
 
         if (emp == null) { JOptionPane.showMessageDialog(this, "직원을 선택하세요."); return; }
-        if (startDate.isEmpty()) { JOptionPane.showMessageDialog(this, "시작일을 입력하세요."); return; }
-        if (endDate.isEmpty()) { JOptionPane.showMessageDialog(this, "종료일을 입력하세요."); return; }
+        if (!isValidDate(startDate)) { JOptionPane.showMessageDialog(this, "시작일을 올바르게 입력하세요. (YYYY-MM-DD)", "날짜 오류", JOptionPane.ERROR_MESSAGE); return; }
+        if (!isValidDate(endDate))   { JOptionPane.showMessageDialog(this, "종료일을 올바르게 입력하세요. (YYYY-MM-DD)", "날짜 오류", JOptionPane.ERROR_MESSAGE); return; }
         if (!validateDates()) {
             JOptionPane.showMessageDialog(this, "종료일이 시작일보다 이전일 수 없습니다.", "날짜 오류", JOptionPane.ERROR_MESSAGE);
             return;
@@ -238,4 +242,18 @@ public class LeaveDialog extends JDialog {
     }
 
     public boolean isSaved() { return saved; }
+
+    private static JFormattedTextField makeDateField() {
+        try {
+            javax.swing.text.MaskFormatter fmt = new javax.swing.text.MaskFormatter("####-##-##");
+            fmt.setPlaceholderCharacter('_');
+            fmt.setAllowsInvalid(false);
+            JFormattedTextField f = new JFormattedTextField(fmt);
+            f.setColumns(10);
+            f.setFocusLostBehavior(JFormattedTextField.PERSIST);
+            return f;
+        } catch (java.text.ParseException ex) {
+            return new JFormattedTextField();
+        }
+    }
 }

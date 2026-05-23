@@ -468,6 +468,10 @@ public class EmployeeDialog extends JDialog {
         if (name.isEmpty())     { info("이름을 입력하세요."); return; }
         if (resident.isEmpty()) { info("주민번호를 입력하세요."); return; }
         if (educ.isEmpty())     { info("학력을 입력하세요."); return; }
+        if (phone.isEmpty())    { info("전화번호를 입력하세요."); return; }
+        if (sinipEmailLocal.getText().trim().isEmpty() || sinipEmailDomain.getText().trim().isEmpty()) {
+            info("이메일을 올바르게 입력하세요."); return;
+        }
         if (hireDate.isEmpty()) { info("입사일을 입력하세요."); return; }
         try { LocalDate.parse(hireDate); }
         catch (Exception ex) { error("입사일 형식이 올바르지 않습니다. (YYYY-MM-DD)"); return; }
@@ -549,6 +553,10 @@ public class EmployeeDialog extends JDialog {
         if (name.isEmpty())     { info("이름을 입력하세요."); return; }
         if (resident.isEmpty()) { info("주민번호를 입력하세요."); return; }
         if (educ.isEmpty())     { info("학력을 입력하세요."); return; }
+        if (phone.isEmpty())    { info("전화번호를 입력하세요."); return; }
+        if (gyeongEmailLocal.getText().trim().isEmpty() || gyeongEmailDomain.getText().trim().isEmpty()) {
+            info("이메일을 올바르게 입력하세요."); return;
+        }
         if (hireDate.isEmpty()) { info("입사일을 입력하세요."); return; }
         try { LocalDate.parse(hireDate); }
         catch (Exception ex) { error("입사일 형식이 올바르지 않습니다. (YYYY-MM-DD)"); return; }
@@ -721,6 +729,10 @@ public class EmployeeDialog extends JDialog {
         if (name.isEmpty())     { info("이름을 입력하세요."); return; }
         if (resident.isEmpty()) { info("주민번호를 입력하세요."); return; }
         if (educ.isEmpty())     { info("학력을 입력하세요."); return; }
+        if (phone.isEmpty())    { info("전화번호를 입력하세요."); return; }
+        if (emailLocalField.getText().trim().isEmpty() || emailDomainField.getText().trim().isEmpty()) {
+            info("이메일을 올바르게 입력하세요."); return;
+        }
         if (hireDate.isEmpty()) { info("입사일을 입력하세요."); return; }
         if (pos == null)        { info("직급을 선택하세요."); return; }
         if ("경영관리".equals(dept) && editPermField.getText().trim().isEmpty()) {

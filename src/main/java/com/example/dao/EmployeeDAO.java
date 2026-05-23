@@ -2,7 +2,6 @@ package com.example.dao;
 
 import com.example.model.Employee;
 import com.example.model.Position;
-import com.example.util.MaskingUtil;
 
 import java.sql.*;
 import java.time.LocalDate;
@@ -24,7 +23,7 @@ public class EmployeeDAO {
         emp.setPositionId(rs.getInt("position_id"));
         emp.setEmployeeName(rs.getString("employee_name"));
         emp.setGrade(rs.getString("grade"));
-        emp.setResidentNumber(MaskingUtil.maskResidentNumber(rs.getString("resident_number")));
+        emp.setResidentNumber(rs.getString("resident_number"));
         emp.setEducation(rs.getString("education"));
         emp.setDepartment(rs.getString("department"));
         emp.setPhoneNumber(rs.getString("phone_number"));
@@ -99,7 +98,30 @@ public class EmployeeDAO {
         }
     }
 
+    private void checkUnique(Connection conn, String col, String val, Integer excludeId, String msg)
+            throws SQLException {
+        if (val == null || val.isEmpty()) return;
+        String sql = "SELECT 1 FROM employee WHERE " + col + "=?" +
+                     (excludeId != null ? " AND id!=?" : "") + " LIMIT 1";
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, val);
+            if (excludeId != null) ps.setInt(2, excludeId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) throw new SQLException(msg);
+            }
+        }
+    }
+
+    private void checkDuplicates(Employee e, Integer excludeId) throws SQLException {
+        try (Connection conn = DatabaseConnection.getConnection()) {
+            checkUnique(conn, "resident_number", e.getResidentNumber(), excludeId, "이미 등록된 주민번호입니다.");
+            checkUnique(conn, "phone_number",    e.getPhoneNumber(),    excludeId, "이미 등록된 전화번호입니다.");
+            checkUnique(conn, "email",           e.getEmail(),          excludeId, "이미 등록된 이메일입니다.");
+        }
+    }
+
     public void insert(Employee e) throws SQLException {
+        checkDuplicates(e, null);
         String sql = "INSERT INTO employee " +
             "(id, position_id, employee_name, resident_number, education, department, phone_number, email, hire_date) " +
             "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
@@ -119,6 +141,7 @@ public class EmployeeDAO {
     }
 
     public void update(Employee e) throws SQLException {
+        checkDuplicates(e, e.getId());
         String sql = "UPDATE employee SET position_id=?, employee_name=?, resident_number=?, " +
             "education=?, department=?, phone_number=?, email=?, hire_date=? WHERE id=?";
         try (Connection conn = DatabaseConnection.getConnection();
